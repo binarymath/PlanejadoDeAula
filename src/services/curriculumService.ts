@@ -1,0 +1,141 @@
+import * as XLSX from "xlsx";
+import curriculoLocal from "../config/curriculo_matematica.json";
+
+export const CURRICULO_SHEET_ID = "1VAd4wV-MuacQrV2Im9wybtsQpZiJPI4_qAnlFF4DmcI";
+export const CURRICULO_XLSX_URL = `https://docs.google.com/spreadsheets/d/${CURRICULO_SHEET_ID}/export?format=xlsx`;
+
+export interface AulaCurriculoItem {
+  id: string;
+  anoEscolar: string;
+  bimestre: string;
+  aula: number;
+  conteudo: string;
+  objetivos: string;
+  habilidades: string;
+  aprendizagemEssencial: string;
+  descritorSaresp: string;
+}
+
+export interface GrupoAprendizagemEssencial {
+  id: string;
+  aprendizagemEssencial: string;
+  aulasCount: number;
+  conteudos: string[];
+  habilidades: string[];
+  descritoresSaresp: string[];
+}
+
+let cachedCurriculoWorkbook: XLSX.WorkBook | null = null;
+
+/**
+ * Obtém todas as aulas do ano e bimestre informados,
+ * primeiro tentando a planilha online (com fallback instantâneo no catálogo local).
+ */
+export async function obterAulasCurriculo(
+  anoTexto: string,
+  bimestreTexto: string
+): Promise<AulaCurriculoItem[]> {
+  // 1. Detectar o ano escolar
+  const anoNorm = anoTexto || "";
+  let sheetName = "6º Ano";
+  if (anoNorm.includes("7")) sheetName = "7º Ano";
+  else if (anoNorm.includes("8")) sheetName = "8º Ano";
+  else if (anoNorm.includes("9")) sheetName = "9º Ano";
+
+  // 2. Detectar o bimestre
+  const bimNorm = bimestreTexto || "1º Bimestre";
+  const bimNumero = bimNorm.match(/([1234])/)?.[1] || "1";
+  const bimEsperado = `${bimNumero}º Bimestre`;
+
+  // Tenta carregar do cache online se disponível
+  try {
+    if (!cachedCurriculoWorkbook) {
+      const resp = await fetch(CURRICULO_XLSX_URL);
+      if (resp.ok) {
+        const ab = await resp.arrayBuffer();
+        cachedCurriculoWorkbook = XLSX.read(ab, { type: "array" });
+      }
+    }
+
+    if (cachedCurriculoWorkbook && cachedCurriculoWorkbook.Sheets[sheetName]) {
+      const rows: any[][] = XLSX.utils.sheet_to_json(cachedCurriculoWorkbook.Sheets[sheetName], {
+        header: 1,
+        defval: "",
+      });
+      const itens: AulaCurriculoItem[] = [];
+      rows.slice(1).forEach((r, idx) => {
+        const [ano, bim, aula, conteudo, objetivos, habs, ae, descritor] = r;
+        const bimRow = String(bim || "").trim();
+        if (bimRow.includes(`${bimNumero}º`)) {
+          itens.push({
+            id: `${sheetName}_${idx + 1}`,
+            anoEscolar: String(ano || sheetName).trim(),
+            bimestre: bimRow,
+            aula: Number(aula) || idx + 1,
+            conteudo: String(conteudo || "").trim(),
+            objetivos: String(objetivos || "").trim(),
+            habilidades: String(habs || "").trim(),
+            aprendizagemEssencial: String(ae || "").trim(),
+            descritorSaresp: String(descritor || "").trim(),
+          });
+        }
+      });
+      if (itens.length > 0) return itens;
+    }
+  } catch (err) {
+    console.warn("Usando catálogo local de currículo:", err);
+  }
+
+  // Fallback nos dados locais catalogados
+  const localAba = (curriculoLocal as Record<string, AulaCurriculoItem[]>)[sheetName] || [];
+  return localAba.filter((item) => item.bimestre.includes(`${bimNumero}º`));
+}
+
+/**
+ * Agrupa as aulas por Aprendizagem Essencial (AE)
+ */
+export function agruparPorAprendizagemEssencial(
+  aulas: AulaCurriculoItem[]
+): GrupoAprendizagemEssencial[] {
+  const gruposMap = new Map<string, GrupoAprendizagemEssencial>();
+
+  aulas.forEach((item) => {
+    const ae = item.aprendizagemEssencial.trim();
+    if (!ae) return;
+
+    if (!gruposMap.has(ae)) {
+      gruposMap.set(ae, {
+        id: ae,
+        aprendizagemEssencial: ae,
+        aulasCount: 0,
+        conteudos: [],
+        habilidades: [],
+        descritoresSaresp: [],
+      });
+    }
+
+    const g = gruposMap.get(ae)!;
+    g.aulasCount += 1;
+    if (item.conteudo && !g.conteudos.includes(item.conteudo)) {
+      g.conteudos.push(item.conteudo);
+    }
+    if (item.habilidades) {
+      item.habilidades.split(",").forEach((h) => {
+        const hClean = h.trim();
+        if (hClean && !g.habilidades.includes(hClean)) {
+          g.habilidades.push(hClean);
+        }
+      });
+    }
+    if (item.descritorSaresp) {
+      item.descritorSaresp.split("/").forEach((d) => {
+        const dClean = d.trim();
+        if (dClean && !g.descritoresSaresp.includes(dClean)) {
+          g.descritoresSaresp.push(dClean);
+        }
+      });
+    }
+  });
+
+  return Array.from(gruposMap.values());
+}

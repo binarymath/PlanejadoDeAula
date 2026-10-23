@@ -1,0 +1,569 @@
+[
+  {
+    "id": "met_1",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Sem Escapatória / Sem Saída (No Opt Out)",
+    "definicaoDescricao": "Sequência instrucional que começa com o aluno incapaz de responder e termina com ele mesmo verbalizando a resposta correta, estabelecendo que a desistência não é permitida.",
+    "exemploPratico": "Quando um estudante disser \"não sei\", o docente fornece uma pista facilitadora ou recorre a outro aluno e, imediatamente, retorna ao primeiro para que ele reproduza a resposta correta.",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_2",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Certo É Certo (Right Is Right)",
+    "definicaoDescricao": "Manutenção de alto padrão de exigência conceitual, não validando respostas incompletas ou aproximadamente certas como plenamente corretas.",
+    "exemploPratico": "O docente elogia o raciocínio inicial, mas insiste: \"Você começou bem, mas que termo técnico usamos para definir exatamente esse resultado?\".",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_3",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Puxe Mais / Estique (Stretch It)",
+    "definicaoDescricao": "Ampliação imediata do aprendizado do aluno após um acerto, propondo perguntas complementares de aprofundamento, justificativa ou aplicação em novo contexto.",
+    "exemploPratico": "Após a resposta certa sobre a área da figura, indagar: \"Como você calcularia se as dimensões fossem duplicadas? Justifique com a fórmula\".",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_4",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Boa Expressão / O Formato Importa (Format Matters)",
+    "definicaoDescricao": "Exigência de respostas estruturadas em frases completas, linguagem acadêmica formal e volume de voz audível para toda a turma.",
+    "exemploPratico": "Ao ouvir \"42\", o professor intervém gentilmente: \"Por favor, responda com uma sentença completa: O mínimo múltiplo comum encontrado foi...\".",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_5",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Sem Desculpas (No Apologies)",
+    "definicaoDescricao": "Postura docente que recusa rebaixar o nível do conteúdo ou se desculpar pela complexidade do tema, tratando o saber rigoroso como valioso e acessível a todos.",
+    "exemploPratico": "Em vez de dizer \"esse teorema é muito chato e difícil\", o professor declara: \"Esse conteúdo é fascinante e vocês têm plena capacidade de dominá-lo hoje\".",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_6",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Comece pelo Fim (Begin with the End)",
+    "definicaoDescricao": "Planejamento instrucional reverso que parte do objetivo claro de domínio e da questão final avaliativa antes de escolher as atividades e recursos.",
+    "exemploPratico": "O docente elabora a pergunta exata da avaliação de saída (Exit Ticket) e estrutura cada minuto da aula para conduzir os estudantes até aquele domínio.",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_7",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Quatro Critérios / 4 Ms (Made First, Most Important, Measurable, Manageable)",
+    "definicaoDescricao": "Construção de objetivos de aula diários que sejam elaborados primeiro, essenciais, mensuráveis ao final do período e gerenciáveis no tempo disponível.",
+    "exemploPratico": "Definir na pauta: \"Ao término da aula de 50 minutos, todo aluno fatorará corretamente 3 números compostos com 100% de precisão na folha de registro\".",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_8",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Deixe Claro / Publique o Objetivo (Post It)",
+    "definicaoDescricao": "Fixação visível e transparente do objetivo pedagógico da aula em local destacado na lousa, permitindo que os estudantes monitorem sua meta de aprendizagem.",
+    "exemploPratico": "Escrever no canto superior direito do quadro em linguagem clara: \"Hoje aprenderemos a decompor números naturais em fatores primos menores que 100\".",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_9",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "O Caminho Mais Curto (Shortest Path)",
+    "definicaoDescricao": "Escolha da rota instrucional mais direta, focada e eficaz para alcançar o objetivo curricular, eliminando rodeios ou distrações metodológicas.",
+    "exemploPratico": "Optar por uma demonstração prática e objetiva de 8 minutos seguida de exercícios focados, dispensando dinâmicas prolixas que não agregam ao objetivo central.",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_10",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Planeje em Dobro (Double Plan)",
+    "definicaoDescricao": "Planejamento didático detalhado que prevê simultaneamente o que o professor estará fazendo e o que cada aluno estará executando a cada minuto da aula.",
+    "exemploPratico": "Organizar o plano em duas colunas sincronizadas: \"Enquanto o professor demonstra a fatoração no quadro, os alunos acompanham preenchendo a tabela guia no caderno\".",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_11",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Faça o Mapa / Desenhe as Carteiras (Draw the Map)",
+    "definicaoDescricao": "Disposição intencional e estratégica das carteiras e circulação da sala para maximizar o foco, colaboração e supervisão do professor.",
+    "exemploPratico": "Organizar as carteiras em fileiras emparelhadas com corredores largos para acesso rápido a todos os alunos durante as etapas de prática individual.",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_12",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "O Gancho (The Hook)",
+    "definicaoDescricao": "Introdução breve, estimulante e envolvente nos minutos iniciais da aula para capturar a curiosidade e conectar os alunos ao tema.",
+    "exemploPratico": "Apresentar um enigma visual de criptografia numérica simples antes de iniciar a aula de números primos, desafiando a sala a descobrir a chave secreta.",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_13",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Dê Nome às Etapas (Name the Steps)",
+    "definicaoDescricao": "Organização e rotulação explícita das etapas de resolução de um procedimento ou habilidade complexa em passos fáceis de memorizar e replicar.",
+    "exemploPratico": "Nomear o roteiro de fatoração: \"Passo 1: Identificar o menor divisor primo; Passo 2: Efetuar a divisão; Passo 3: Repetir até chegar ao quociente 1\".",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_14",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Quadro = Papel / Lousa = Caderno (Board = Paper)",
+    "definicaoDescricao": "Modelagem exemplar na lousa da organização visual, notas e formatação exata esperada no caderno do estudante.",
+    "exemploPratico": "O professor divide a lousa em seções com margens e destaques idênticos aos que os estudantes devem manter em suas folhas de exercícios.",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_15",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Circule pela Sala (Circulate)",
+    "definicaoDescricao": "Movimentação estratégica e contínua do professor por todo o espaço da sala durante o trabalho dos alunos, verificando a aprendizagem de perto.",
+    "exemploPratico": "Caminhar pelas fileiras com caneta colorida na mão, validando respostas corretas imediatamente e orientando os que precisarem de suporte individual.",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_16",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Divida em Partes / Mostre as Etapas (Break It Down)",
+    "definicaoDescricao": "Decomposição de uma pergunta ou tarefa complexa em partes menores e mais simples assim que o estudante encontra dificuldades na resposta.",
+    "exemploPratico": "Se o aluno empacar na decomposição de 36, o professor intervém: \"Qual é a regra para saber se um número é divisível por 2? O último algarismo é par?\".",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_17",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Proporção / Razão Cognitiva (Ratio)",
+    "definicaoDescricao": "Maximização da quantidade de trabalho cognitivo e escrita realizada ativamente pelos alunos em relação ao tempo de fala do docente.",
+    "exemploPratico": "Após 7 minutos de explicação, o docente passa a bola para a turma resolver 5 desafios em duplas, assumindo o papel de mediador e observador atento.",
+    "modalidadeRecomendada": "Misto (Duplas / Individual)"
+  },
+  {
+    "id": "met_18",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Entendeu? / Cheque a Compreensão (Check for Understanding)",
+    "definicaoDescricao": "Sondagem contínua e intencional do domínio dos estudantes em tempo real, sem se basear em perguntas retóricas como \"todos entenderam?\".",
+    "exemploPratico": "Pedir que cada aluno aponte com os dedos a alternativa correta ou mostre o resultado em uma minilousa para avaliar visualmente a porcentagem de acertos.",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_19",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Mais Uma Vez / Rebatidas Rápidas (At Bats)",
+    "definicaoDescricao": "Oferta de repetidas oportunidades de prática individual até que a habilidade ou procedimento se torne automático e consolidado.",
+    "exemploPratico": "Disponibilizar uma sequência de 10 exercícios curtos e progressivos de cálculo mental para consolidação autônoma imediata.",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_20",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Arremate / Bilhete de Saída (Exit Ticket)",
+    "definicaoDescricao": "Aplicação de uma breve avaliação formativa (1 a 3 perguntas) nos minutos finais para diagnosticar o percentual de domínio alcançado na aula.",
+    "exemploPratico": "Reservar os últimos 5 minutos para os alunos resolverem uma questão diagnóstica em folha destacável e entregarem ao professor antes de sair da sala.",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_21",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Tome Posição / Posicione-se (Take a Stand)",
+    "definicaoDescricao": "Solicitação para que os estudantes expressem publicamente sua opinião, concordância ou julgamento crítico sobre uma afirmação conceitual.",
+    "exemploPratico": "O docente lança uma afirmativa polêmica e solicita: \"Levante o polegar para cima quem concorda que todo número ímpar é primo e polegar para baixo quem discorda\".",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_22",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "De Surpresa / Todas as Mãos (Cold Call)",
+    "definicaoDescricao": "Chamada de estudantes para responder às perguntas sem aviso prévio e independentemente de terem levantado a mão, garantindo engajamento coletivo.",
+    "exemploPratico": "O professor formula a pergunta para toda a classe, aguarda 4 segundos de reflexão silenciosa e chama: \"Lucas, como você iniciaria essa resolução?\".",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_23",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Todos Juntos / Em Coro (Call and Response)",
+    "definicaoDescricao": "Comando claro para que toda a turma responda a uma pergunta curta em uníssono, elevando a energia coletiva e fixando termos fundamentais.",
+    "exemploPratico": "O professor anuncia: \"O menor número primo e único primo par é o... (sinal com a mão)\" e toda a classe responde em conjunto: \"Dois!\".",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_24",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Bate-Rebate (Pepper)",
+    "definicaoDescricao": "Dinâmica rápida e energizante de perguntas e respostas curtas, em ritmo ágil de pingue-pongue, para revisar fatos e fixar conteúdos prévios.",
+    "exemploPratico": "O docente dispara tabuada e propriedades geométricas apontando para diferentes alunos em sequência de 10 segundos por resposta, mantendo ritmo dinâmico.",
+    "modalidadeRecomendada": "Toda a Turma / Individual"
+  },
+  {
+    "id": "met_25",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Tempo de Espera (Wait Time)",
+    "definicaoDescricao": "Pausa intencional de 3 a 7 segundos entre a formulação de uma pergunta e a autorização para respostas, ampliando o rigor cognitivo de todos.",
+    "exemploPratico": "O docente lança a pergunta desafiadora e diz: \"Não levantem as mãos ainda; pensem em silêncio por 5 segundos antes de qualquer resposta\".",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_26",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Todo Mundo Escreve (Everybody Writes)",
+    "definicaoDescricao": "Exigência de que todos os alunos elaborem e registrem por escrito suas reflexões antes de abrir a discussão oral para a classe.",
+    "exemploPratico": "Antes do debate, o docente estipula: \"Todos têm 2 minutos para anotar em duas frases seu argumento principal sobre o texto lido\".",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_27",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Plumas e Paetês / O Fator Arte (Vegas)",
+    "definicaoDescricao": "Momento breve de encenação, música ou ritmo lúdico planejado para celebrar o conhecimento e reforçar uma aprendizagem crucial.",
+    "exemploPratico": "Criar uma paródia musical de 30 segundos ou uma vinheta com palmas sincronizadas para fixar as regras de sinais da multiplicação.",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_28",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "A Entrada / Rotina de Recepção (Entry Routine)",
+    "definicaoDescricao": "Procedimento padronizado e rotineiro de acolhimento dos estudantes na porta da sala, direcionando-os de imediato para a primeira atividade.",
+    "exemploPratico": "Cumprimentar individualmente cada estudante na soleira da porta enquanto eles retiram a folha de atividades e sentam-se prontos para produzir.",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_29",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Faça Agora / Faça Já (Do Now)",
+    "definicaoDescricao": "Atividade curta (3 a 5 minutos) já projetada ou impressa que os alunos iniciam de forma 100% autônoma assim que entram na sala.",
+    "exemploPratico": "Ao sentar, cada estudante resolve 3 exercícios de revisão expostos no quadro sem necessidade de aviso prévio do professor.",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_30",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Breves Transições (Tight Transitions)",
+    "definicaoDescricao": "Rotinas ensaiadas e cronometradas de mudança de atividade, troca de sala ou distribuição de materiais, reduzindo o tempo ocioso a poucos segundos.",
+    "exemploPratico": "Ao comando \"Transição em 10 segundos\", os alunos guardam o livro, posicionam o caderno aberto na página certa e olham para o professor em silêncio.",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_31",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Controle do Material (Binder Control)",
+    "definicaoDescricao": "Criação de um sistema rígido e padronizado de arquivamento, organização de pastas ou cadernos para preservação do patrimônio de aprendizagem.",
+    "exemploPratico": "Dedicar 3 minutos semanais para verificar se as fichas de atividades estão coladas em ordem cronológica com data e título no caderno.",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_32",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "POSSO / Postura Ativa (SLANT)",
+    "definicaoDescricao": "Conjunto de comportamentos não verbais de atenção ativa: Postura ereta, Ouvir com atenção, Sondar dúvidas, Sentar corretamente e Olhar nos olhos.",
+    "exemploPratico": "Antes de iniciar uma explicação decisiva, o professor orienta: \"Turma, comando POSSO: coluna ereta, canetas apoiadas e olhos no orador\".",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_33",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Em Suas Marcas (On Your Mark)",
+    "definicaoDescricao": "Exigência de que todos os alunos estejam com os materiais pedagógicos necessários (lápis, borracha, caderno) já abertos e prontos antes da largada.",
+    "exemploPratico": "Estabelecer como norma diária que o material esteja organizado na mesa nos primeiros 30 segundos da aula antes de qualquer explicação.",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_34",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Comunicação por Sinais (Seat Signals)",
+    "definicaoDescricao": "Uso de sinais gestuais padronizados e discretos pelos alunos para expressar necessidades rotineiras sem interromper a fluidez da explicação coletiva.",
+    "exemploPratico": "O aluno ergue a mão com o dedo indicador para pedir apontador ou dois dedos cruzados para ir ao banheiro, recebendo um aceno silencioso do professor.",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_35",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Vivas! / Cumprimentos (Props)",
+    "definicaoDescricao": "Celebrações públicas rápidas (1 a 3 segundos), bem-humoradas e orquestradas pela turma para comemorar um esforço ou resposta brilhante.",
+    "exemploPratico": "Após uma demonstração impecável de um aluno na lousa, a turma dispara coletivamente \"Duas palmas e um estalo!\" sob o comando do docente.",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_36",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Padrão 100% (100 Percent)",
+    "definicaoDescricao": "Exigência sistemática de engajamento e adesão de 100% dos estudantes às instruções pedagógicas antes de prosseguir com a aula.",
+    "exemploPratico": "Se 2 alunos continuarem conversando após a orientação de silêncio, o docente congela, espera a atenção total e retoma apenas quando atingir 100%.",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_37",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "O Que Fazer (What to Do)",
+    "definicaoDescricao": "Emissão de instruções específicas, concretas, sequenciais e diretamente observáveis pelo estudante, em vez de comandos abstratos.",
+    "exemploPratico": "Em vez de falar \"prestem atenção\", orientar: \"Coloquem as canetas sobre a mesa, olhem para a projeção e acompanhem o raciocínio na linha 3\".",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_38",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Voz de Comando (Strong Voice)",
+    "definicaoDescricao": "Exercício de liderança de sala apoiado em autoridade calma, economia de palavras, postura corporal firme e comunicação sem disputar voz com a turma.",
+    "exemploPratico": "Ao solicitar a atenção da turma, o docente para de se mover, abaixa ligeiramente o tom para uma frequência segura e aguarda o silêncio total.",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_39",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Faça de Novo (Do It Again)",
+    "definicaoDescricao": "Prática imediata de repetir um procedimento ou comportamento que não atingiu o padrão de excelência esperado até que seja executado com perfeição.",
+    "exemploPratico": "Se a turma entrar de forma barulhenta ou desorganizada na sala de aula, o professor pede que todos retornem ao corredor e repitam a entrada com ordem.",
+    "modalidadeRecomendada": "Toda a Turma / Individual"
+  },
+  {
+    "id": "met_40",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Capriche nos Detalhes (Sweat the Details)",
+    "definicaoDescricao": "Cuidado sistemático com o ambiente físico e a ordem visual da sala de aula para comunicar que detalhes minuciosos importam para a excelência.",
+    "exemploPratico": "Garantir papéis recolhidos do chão, cadeiras alinhadas e cabeçalhos preenchidos com zelo antes do encerramento de cada encontro.",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_41",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Umbral / Limiar de Entrada (Threshold)",
+    "definicaoDescricao": "Presença estratégica do professor no portal de entrada da sala para saudar e calibrar o tom comportamental e acadêmico antes do início da aula.",
+    "exemploPratico": "Posicionar-se na porta entre os dois tempos, acolhendo os estudantes pelo nome e reforçando a postura necessária para o início imediato das atividades.",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_42",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Sem Aviso / Sem Alarde (No Warning)",
+    "definicaoDescricao": "Aplicação imediata e proporcional de consequências previamente estabelecidas sem proferir avisos reiterados ou ameaças vazias.",
+    "exemploPratico": "Ao notar uma infração combinada, o professor registra discretamente a consequência acordada na ficha do aluno sem gerar embates dramáticos na turma.",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_43",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Discurso Positivo / Enquadramento Positivo (Positive Framing)",
+    "definicaoDescricao": "Comunicação orientada para reforçar os comportamentos desejados e o sucesso futuro, evitando reprimendas amargas ou sarcásticas.",
+    "exemploPratico": "Em vez de dizer \"estou cansado da falta de respeito de vocês\", dizer: \"Nossa turma tem metas altas e precisamos do foco de todos para bater o objetivo\".",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_44",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Elogio Preciso (Precise Praise)",
+    "definicaoDescricao": "Reconhecimento sincero e específico fundamentado no esforço e na ação concreta do estudante, diferenciando expectativas básicas de mérito genuíno.",
+    "exemploPratico": "Dizer: \"Parabéns, Sofia, pelo capricho no registro detalhado das três etapas da fatoração\", em vez de um genérico \"bom trabalho\".",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_45",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Cordial / Rigoroso (Warm/Strict)",
+    "definicaoDescricao": "Combinação harmoniosa de afetividade calorosa e empatia com um rigor inegociável de padrões acadêmicos e disciplinares.",
+    "exemploPratico": "Dizer com tom acolhedor e firme: \"Eu me importo profundamente com o seu futuro e por essa razão não permito que você entregue essa tarefa incompleta\".",
+    "modalidadeRecomendada": "Toda a Turma / Individual"
+  },
+  {
+    "id": "met_46",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Fator A / Fator Alegria (The J-Factor)",
+    "definicaoDescricao": "Inclusão intencional de entusiasmo, humor e celebração nas atividades acadêmicas para tornar o aprendizado intelectual estimulante e memorável.",
+    "exemploPratico": "Celebrar a conclusão de um desafio matemático complexo com um suspense cômico na revelação do gabarito e um toque de sineta festivo na sala.",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_47",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Equilíbrio Emocional / Constância Emocional (Emotional Constancy)",
+    "definicaoDescricao": "Manutenção de compostura e equilíbrio emocional imperturbável pelo docente diante de desvios comportamentais ou frustrações cotidianas.",
+    "exemploPratico": "Ao intervir em um conflito entre alunos, o professor mantém voz estável e neutra, demonstrando segurança sem elevar a voz ou demonstrar irritação.",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_48",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Explique Tudo (Explain Everything)",
+    "definicaoDescricao": "Compartilhamento transparente e pedagógico do propósito e da razão de ser de cada regra, procedimento ou atividade com os estudantes.",
+    "exemploPratico": "Explicar: \"Nós treinamos essa transição rápida em 10 segundos para preservar precioso tempo de prática guiada em sala, garantindo que vocês dominem a prova\".",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_49",
+    "categoriaReferencia": "Aula Nota 10 (Teach Like a Champion)",
+    "autorReferencia": "Doug Lemov",
+    "metodologiaAtiva": "Errar Faz Parte / Cultura do Erro (Normalize Error)",
+    "definicaoDescricao": "Tratamento do erro como parte natural e indispensável do processo de investigação e aprendizagem, acolhendo falhas com curiosidade científica.",
+    "exemploPratico": "Ao ouvir uma resposta equivocada, o professor reage com naturalidade: \"Excelente tentativa! Esse é um engano comum. Quem consegue identificar onde o raciocínio divergiu?\".",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_50",
+    "categoriaReferencia": "Princípios de Instrução (Principles of Instruction)",
+    "autorReferencia": "Barak Rosenshine",
+    "metodologiaAtiva": "Revisão Diária (Daily Review)",
+    "definicaoDescricao": "Prática sistemática de iniciar as aulas com a revisão de conceitos anteriores para reativar conhecimentos prévios e consolidar a memória de longo prazo.",
+    "exemploPratico": "Dedicar os primeiros 5 a 8 minutos da aula para responder 3 questões rápidas projetadas na lousa sobre a aula anterior, corrigindo dúvidas comuns imediatamente.",
+    "modalidadeRecomendada": "Toda a Turma / Individual"
+  },
+  {
+    "id": "met_51",
+    "categoriaReferencia": "Princípios de Instrução (Principles of Instruction)",
+    "autorReferencia": "Barak Rosenshine",
+    "metodologiaAtiva": "Apresentação em Pequenos Passos (Small Steps)",
+    "definicaoDescricao": "Apresentação de conteúdos novos em pequenas unidades gradativas, intercalando prática entre cada etapa para respeitar a capacidade da memória de trabalho.",
+    "exemploPratico": "Ao ensinar fatoração em números primos, explica-se primeiro a definição de primo, testa-se a identificação com a turma, e só então avança-se para a decomposição sucessiva.",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_52",
+    "categoriaReferencia": "Princípios de Instrução (Principles of Instruction)",
+    "autorReferencia": "Barak Rosenshine",
+    "metodologiaAtiva": "Questionamentos Frequentes (Ask Frequent Questions)",
+    "definicaoDescricao": "Formulação constante de perguntas a múltiplos estudantes para checar a compreensão e exigir que processem ativamente a nova informação.",
+    "exemploPratico": "Alternar explicações expositivas com perguntas conceituais para diversos alunos, solicitando que expliquem com suas palavras o porquê de cada procedimento.",
+    "modalidadeRecomendada": "Toda a Turma / Individual"
+  },
+  {
+    "id": "met_53",
+    "categoriaReferencia": "Princípios de Instrução (Principles of Instruction)",
+    "autorReferencia": "Barak Rosenshine",
+    "metodologiaAtiva": "Fornecimento de Modelos e Exemplos (Provide Models)",
+    "definicaoDescricao": "Exibição explícita de problemas resolvidos e modelos passo a passo, tornando visível o fluxo de raciocínio de um especialista diante do desafio.",
+    "exemploPratico": "O professor resolve um exemplo complexo na lousa verbalizando seu processo mental (Think Aloud): \"Aqui eu vejo que o último algarismo é par, logo sei que o menor primo divisor é 2\".",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_54",
+    "categoriaReferencia": "Princípios de Instrução (Principles of Instruction)",
+    "autorReferencia": "Barak Rosenshine",
+    "metodologiaAtiva": "Prática Guiada (Guide Student Practice)",
+    "definicaoDescricao": "Acompanhamento supervisionado das primeiras tentativas práticas dos estudantes, oferecendo orientação direta e prevenindo a fixação de erros conceituais.",
+    "exemploPratico": "Propor que os estudantes resolvam os primeiros exercícios em duplas enquanto o professor circula entre as mesas observando, tirando dúvidas e reorientando abordagens.",
+    "modalidadeRecomendada": "Em Duplas / Pequenos Grupos"
+  },
+  {
+    "id": "met_55",
+    "categoriaReferencia": "Princípios de Instrução (Principles of Instruction)",
+    "autorReferencia": "Barak Rosenshine",
+    "metodologiaAtiva": "Verificação da Compreensão (Check for Understanding)",
+    "definicaoDescricao": "Checagem intencional e regular da assimilação dos alunos antes de passar para a próxima etapa da matéria, evitando prosseguir com lacunas.",
+    "exemploPratico": "Fazer perguntas diagnósticas direcionadas e pedir para os estudantes resumirem o ponto principal antes de liberar para a prática independente individual.",
+    "modalidadeRecomendada": "Toda a Turma"
+  },
+  {
+    "id": "met_56",
+    "categoriaReferencia": "Princípios de Instrução (Principles of Instruction)",
+    "autorReferencia": "Barak Rosenshine",
+    "metodologiaAtiva": "Alta Taxa de Sucesso (High Success Rate)",
+    "definicaoDescricao": "Estruturação da instrução para que os estudantes atinjam aproximadamente 80% de precisão nos exercícios guiados antes do trabalho totalmente autônomo.",
+    "exemploPratico": "Ajustar o nível de apoio e fornecer exemplos adicionais sempre que a turma demonstrar índice de erro significativo durante as atividades mediadas.",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_57",
+    "categoriaReferencia": "Princípios de Instrução (Principles of Instruction)",
+    "autorReferencia": "Barak Rosenshine",
+    "metodologiaAtiva": "Apoios à Aprendizagem (Provide Scaffolds)",
+    "definicaoDescricao": "Fornecimento de suportes temporários (organizadores visuais, esquemas, checklists) que são gradualmente retirados à medida que o aluno ganha proficiência.",
+    "exemploPratico": "Disponibilizar uma tabela de apoio com a lista dos primeiros números primos e um fluxograma com as etapas de divisão, retirando o material de consulta nas etapas finais.",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_58",
+    "categoriaReferencia": "Peer Instruction: A User's Manual",
+    "autorReferencia": "Eric Mazur",
+    "metodologiaAtiva": "Instrução por Pares (Peer Instruction)",
+    "definicaoDescricao": "Metodologia ativa estruturada em ciclos de questões conceituais, votação individual, discussão entre pares para convencimento recíproco e revotação.",
+    "exemploPratico": "O professor lança uma questão conceitual de múltipla escolha; os alunos votam sozinhos, depois debatem a resposta em duplas por 2 minutos e votam novamente antes da explicação final.",
+    "modalidadeRecomendada": "Em Duplas / Pares"
+  },
+  {
+    "id": "met_59",
+    "categoriaReferencia": "Taxonomia de Objetivos Educacionais (Human Characteristics and School Learning)",
+    "autorReferencia": "Benjamin Bloom",
+    "metodologiaAtiva": "Aprendizagem para o Domínio (Mastery Learning)",
+    "definicaoDescricao": "Abordagem instrucional fundamentada na premissa de que os estudantes devem atingir um alto nível de domínio conceitual prévio antes de avançar para tópicos subsequentes.",
+    "exemploPratico": "Aplicação de avaliações formativas curtas periódicas; estudantes que atingem 80% avançam para atividades de enriquecimento, enquanto os demais recebem tutoria e nova oportunidade avaliativa.",
+    "modalidadeRecomendada": "Individual"
+  },
+  {
+    "id": "met_60",
+    "categoriaReferencia": "Cooperative Learning in the Classroom",
+    "autorReferencia": "David W. Johnson & Roger T. Johnson",
+    "metodologiaAtiva": "Aprendizagem Cooperativa (Cooperative Learning)",
+    "definicaoDescricao": "Estratégia de trabalho em pequenos grupos estruturada em interdependência positiva, responsabilidade individual, interação face a face e habilidades sociais.",
+    "exemploPratico": "Dinâmica de Grupos de Especialistas (Jigsaw): cada integrante do grupo domina uma parte do conteúdo (ex: critérios de divisibilidade) e ensina os demais colegas da sua equipe original.",
+    "modalidadeRecomendada": "Em Grupo"
+  },
+  {
+    "id": "met_61",
+    "categoriaReferencia": "Flip Your Classroom: Reach Every Student in Every Class Every Day",
+    "autorReferencia": "Jonathan Bergmann & Aaron Sams",
+    "metodologiaAtiva": "Sala de Aula Invertida (Flipped Classroom)",
+    "definicaoDescricao": "Inversão da dinâmica tradicional de ensino: o primeiro contato com a teoria ocorre previamente em casa (vídeos ou leituras) e o tempo presencial é dedicado a discussões, dúvidas e projetos práticos.",
+    "exemploPratico": "Os estudantes assistem a um vídeo explicativo curto de 10 minutos em casa antes da aula; no encontro presencial, a aula começa direto com desafios em grupo e resolução de problemas práticos.",
+    "modalidadeRecomendada": "Misto (Individual / Grupo)"
+  },
+  {
+    "id": "met_62",
+    "categoriaReferencia": "Problem-Based Learning: An Approach to Medical Education",
+    "autorReferencia": "Howard S. Barrows",
+    "metodologiaAtiva": "Aprendizagem Baseada em Problemas (Problem-Based Learning - PBL)",
+    "definicaoDescricao": "Metodologia centrada no aluno na qual a aprendizagem ocorre a partir da análise, formulação de hipóteses e investigação colaborativa para solucionar um problema real e autêntico.",
+    "exemploPratico": "O professor propõe uma situação real: \"Como planejar a distribuição equilibrada de recursos em uma horta escolar?\", estimulando os alunos a levantar necessidades, pesquisar e formular propostas.",
+    "modalidadeRecomendada": "Em Grupo"
+  },
+  {
+    "id": "met_63",
+    "categoriaReferencia": "Project Based Learning: A Guide to Standards-Focused Project Based Learning",
+    "autorReferencia": "John Larmer (Buck Institute for Education - PBLWorks)",
+    "metodologiaAtiva": "Aprendizagem Baseada em Projetos (Project-Based Learning - PjBL)",
+    "definicaoDescricao": "Processo de investigação prolongado no qual os alunos desenvolvem conhecimentos e competências ao conceber uma solução tangível ou produto autêntico para um desafio significativo.",
+    "exemploPratico": "Desenvolvimento de um projeto interdisciplinar ao longo de quatro semanas, culminando em uma mostra pública onde os alunos expõem maquetes, simulações ou aplicativos para a comunidade escolar.",
+    "modalidadeRecomendada": "Em Grupo"
+  }
+]
