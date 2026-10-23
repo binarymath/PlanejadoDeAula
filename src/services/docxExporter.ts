@@ -35,23 +35,13 @@ export async function generateAndDownloadDocx(data: LessonPlanState, customFileN
 
     const hasLogo = Boolean(data.logoEscolaBase64 && data.logoEscolaBase64.startsWith("data:image/"));
 
-    // 2. Se houver logo, injeta na mídia; caso contrário, usa pixel transparente
+    // 2. Se o usuário enviou logo personalizado da escola, injeta em image2.png (posição do logo escolar)
     if (hasLogo) {
       try {
         const imgBytes = dataURItoUint8Array(data.logoEscolaBase64);
-        zip.file("word/media/image1.jpeg", imgBytes);
+        zip.file("word/media/image2.png", imgBytes);
       } catch (e) {
         console.warn("Falha ao injetar logo da escola:", e);
-      }
-    } else {
-      try {
-        const transRes = await fetch("/transparent.png");
-        if (transRes.ok) {
-          const transBytes = await transRes.arrayBuffer();
-          zip.file("word/media/image1.jpeg", transBytes);
-        }
-      } catch (e) {
-        console.warn("Falha ao aplicar imagem transparente:", e);
       }
     }
 
@@ -75,11 +65,13 @@ export async function generateAndDownloadDocx(data: LessonPlanState, customFileN
 
     // 4. Formata os dados para o template
     const renderData = {
+      // Título do cabeçalho oficial de largura total
+      headerEscolaNome: (data.nomeEscola || "EE PROF. MARCO ANTÔNIO MENCACCI").toUpperCase(),
+
       // Títulos dinâmicos conforme o bimestre selecionado
       tituloSecaoRecuperacao: bimesterTitles.tituloRecuperacao,
       tituloSecaoConteudos: bimesterTitles.tituloConteudos,
 
-      headerEscolaBlock: hasLogo ? (data.nomeEscola || "").trim() : "",
       nomeEscola: data.nomeEscola || "EE PROF. MARCO ANTÔNIO MENCACCI",
       nomeProfessor: data.nomeProfessor || "_______________________________",
       componenteCurricular: data.componenteCurricular || "___________________",

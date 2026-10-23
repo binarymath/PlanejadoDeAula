@@ -49,8 +49,8 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             </h3>
             <p className="text-xs text-slate-500">
               {hasLogo
-                ? "Cabeçalho com logo e nome da escola ativo."
-                : "Cabeçalho removido: o documento inicia diretamente na tabela."}
+                ? "Cabeçalho oficial com logotipo da unidade escolar ativo."
+                : "Cabeçalho oficial padrão da Secretaria da Educação ativo."}
             </p>
           </div>
 
@@ -96,29 +96,69 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             className="w-full font-sans text-black print:p-0 print:m-0 print:w-full print:block"
           >
             
+            {/* CABEÇALHO OFICIAL COM LOGO DA UNIDADE ESCOLAR (100% DA LARGURA DA PÁGINA) */}
+            <div className="w-full mb-4 pb-3 border-b-2 border-slate-700/60 print:border-b-2 print:border-black flex items-center justify-between gap-4">
+              {/* Logo da Unidade Escolar (à esquerda) */}
+              <div className="w-28 flex-shrink-0 flex items-center justify-start">
+                {hasLogo ? (
+                  <img
+                    src={data.logoEscolaBase64}
+                    alt="Logo da Unidade Escolar"
+                    className="max-h-16 max-w-28 object-contain"
+                  />
+                ) : (
+                  <img
+                    src="/logo_educacao.png"
+                    alt="Logo Educação SP"
+                    className="max-h-14 max-w-28 object-contain"
+                  />
+                )}
+              </div>
+
+              {/* Texto Centralizado Institucional */}
+              <div className="flex-1 text-center font-sans">
+                <p className="font-bold text-[12px] tracking-wide text-black uppercase leading-tight">
+                  GOVERNO DO ESTADO DE SÃO PAULO
+                </p>
+                <p className="font-bold text-[11px] text-black leading-tight">
+                  SECRETARIA DA EDUCAÇÃO DO ESTADO
+                </p>
+                <p className="font-semibold text-[10px] text-slate-800 leading-tight">
+                  DIRETORIA DE ENSINO – REGIÃO SOROCABA
+                </p>
+                <p className="font-extrabold text-[12px] text-black uppercase tracking-wide mt-0.5 leading-snug">
+                  {data.nomeEscola || "EE PROF. MARCO ANTÔNIO MENCACCI"}
+                </p>
+                <p className="text-[9.5px] text-slate-700 leading-tight">
+                  UA: 10771 – CIE: 919913
+                </p>
+                <p className="text-[8.5px] text-slate-600 leading-tight">
+                  Estrada Dom José Melhado Campos, nº 330, Jardim Josane - Sorocaba
+                </p>
+              </div>
+
+              {/* Brasão / Logo Oficial do Governo de SP (à direita) */}
+              <div className="w-28 flex-shrink-0 flex items-center justify-end">
+                <img
+                  src="/logo_sp.jpeg"
+                  alt="Governo de SP"
+                  className="max-h-14 max-w-28 object-contain"
+                />
+              </div>
+            </div>
+
             {/* ESTRUTURA MODULAR DO GUIA BIMESTRAL (Fiel tanto na tela quanto na impressão) */}
             <div className="doc-sheet border border-black bg-white text-xs divide-y divide-black">
               
-              {/* Bloco 0: Identificação com Escola e Logo */}
+              {/* Bloco 0: Identificação Geral do Professor e Turma */}
               <div className="doc-block p-3.5 space-y-2 leading-relaxed bg-white">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-2 gap-4">
-                  <div className="flex-1">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-2">
+                  <div>
                     <span className="font-bold text-slate-900 text-sm">Escola: </span>
                     <span className="font-bold text-slate-800 text-sm">
                       {data.nomeEscola || "EE PROF. MARCO ANTÔNIO MENCACCI"}
                     </span>
                   </div>
-
-                  {/* Logo da escola */}
-                  {hasLogo && (
-                    <div className="flex-shrink-0 flex items-center justify-end">
-                      <img
-                        src={data.logoEscolaBase64}
-                        alt="Logo da Escola"
-                        className="max-h-14 max-w-24 object-contain"
-                      />
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex flex-wrap justify-between gap-y-1">
