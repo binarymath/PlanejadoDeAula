@@ -16,42 +16,56 @@ export interface DescritorHabilidade {
   abaOrigem: string;        // ex: "7A-1B"
 }
 
+/**
+ * Converte links comuns do Google Sheets (/edit, /view, etc.) para endpoint de exportação XLSX
+ */
+export function normalizarGoogleSheetsXlsxUrl(rawUrl: string): string {
+  if (!rawUrl || !rawUrl.trim()) return "";
+  const trimmed = rawUrl.trim();
+  const match = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (match) {
+    return `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=xlsx`;
+  }
+  return trimmed;
+}
+
 // Cache em memória do workbook completo baixado para não fazer requisições repetidas
 let cachedWorkbook: XLSX.WorkBook | null = null;
-let isFetchingWorkbook = false;
+let cachedWorkbookUrl: string = "";
 
 /**
  * Baixa e armazena em cache o XLSX completo da planilha caso configurada
  */
 export async function getGoogleWorkbook(customUrl?: string): Promise<XLSX.WorkBook | null> {
-  if (cachedWorkbook) {
-    return cachedWorkbook;
-  }
-
-  const url = customUrl || GOOGLE_SHEET_XLSX_URL;
-  if (!url) {
+  const targetUrl = normalizarGoogleSheetsXlsxUrl(customUrl || GOOGLE_SHEET_XLSX_URL);
+  if (!targetUrl) {
     return null;
   }
 
+  if (cachedWorkbook && cachedWorkbookUrl === targetUrl) {
+    return cachedWorkbook;
+  }
+
   // Tenta baixar via fetch
-  const response = await fetch(url);
+  const response = await fetch(targetUrl);
   if (!response.ok) {
     throw new Error(`Falha ao conectar à planilha. Status: ${response.status}`);
   }
 
   const arrayBuffer = await response.arrayBuffer();
   cachedWorkbook = XLSX.read(arrayBuffer, { type: "array" });
+  cachedWorkbookUrl = targetUrl;
   return cachedWorkbook;
 }
-
 
 /**
  * Retorna todos os nomes de abas existentes na planilha
  */
-export async function getSheetNames(): Promise<string[]> {
-  const wb = await getGoogleWorkbook();
+export async function getSheetNames(customUrl?: string): Promise<string[]> {
+  const wb = await getGoogleWorkbook(customUrl);
   return wb ? wb.SheetNames : [];
 }
+
 
 
 /**
@@ -144,12 +158,14 @@ export function filtrarAbasPorNivel(todasAbas: string[], nivel: string | null): 
  */
 export async function carregarDescritoresDaAba(
   abaNome: string,
-  componenteFiltro?: string
+  componenteFiltro?: string,
+  customUrl?: string
 ): Promise<DescritorHabilidade[]> {
-  const wb = await getGoogleWorkbook();
+  const wb = await getGoogleWorkbook(customUrl);
   if (!wb) return [];
   const ws = wb.Sheets[abaNome];
   if (!ws) return [];
+
 
 
   const rawRows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });

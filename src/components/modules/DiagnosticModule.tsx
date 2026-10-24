@@ -23,8 +23,11 @@ import {
   filtrarAbasPorNivel,
   carregarDescritoresDaAba,
   formatarPorcentagem2Casas,
+  normalizarGoogleSheetsXlsxUrl,
 } from "../../services/googleSheetsService";
-import abasCatalogo from "../../config/planilha_abas.json";
+import { Link, CheckCircle2 } from "lucide-react";
+
+const STORAGE_DIAGNOSTIC_URL_KEY = "planejador_url_planilha_diagnostico";
 
 interface DiagnosticModuleProps {
   data: LessonPlanState;
@@ -37,16 +40,63 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
 }) => {
   const bimesterTitles = getBimesterTitles(data.bimestre);
 
-  // Estados de controle da planilha
-  const [todasAbas, setTodasAbas] = useState<string[]>(
-    abasCatalogo.map((a) => a.name)
-  );
+  // Endereço da planilha fornecida pelo professor
+  const [urlPlanilha, setUrlPlanilha] = useState<string>(() => {
+    return localStorage.getItem(STORAGE_DIAGNOSTIC_URL_KEY) || "";
+  });
+  const [planilhaConectada, setPlanilhaConectada] = useState<boolean>(false);
+  const [conectandoPlanilha, setConectandoPlanilha] = useState<boolean>(false);
+
+  // Estados de controle das abas da planilha
+  const [todasAbas, setTodasAbas] = useState<string[]>([]);
   const [abaSelecionada, setAbaSelecionada] = useState<string>("");
   const [descritores, setDescritores] = useState<DescritorHabilidade[]>([]);
   const [selecionadosIds, setSelecionadosIds] = useState<Set<string>>(new Set());
   const [carregando, setCarregando] = useState<boolean>(false);
   const [erroMsg, setErroMsg] = useState<string>("");
   const [painelAberto, setPainelAberto] = useState<boolean>(true);
+
+
+  // Função para conectar e listar abas da planilha do professor
+  const handleConectarPlanilha = async (urlParaConectar?: string) => {
+    const url = (urlParaConectar ?? urlPlanilha).trim();
+    if (!url) {
+      setErroMsg("Por favor, cole o link da sua planilha do Google Sheets.");
+      setPlanilhaConectada(false);
+      setTodasAbas([]);
+      setAbaSelecionada("");
+      setDescritores([]);
+      return;
+    }
+
+    try {
+      setConectandoPlanilha(true);
+      setErroMsg("");
+      const abas = await getSheetNames(url);
+      if (!abas || abas.length === 0) {
+        throw new Error("Nenhuma aba encontrada. Certifique-se de que a planilha está pública para leitura ('Qualquer pessoa com o link').");
+      }
+      setTodasAbas(abas);
+      setPlanilhaConectada(true);
+      localStorage.setItem(STORAGE_DIAGNOSTIC_URL_KEY, url);
+    } catch (err: any) {
+      console.error("Erro ao conectar à planilha:", err);
+      setErroMsg(err.message || "Falha ao carregar abas da planilha. Verifique as permissões de compartilhamento.");
+      setPlanilhaConectada(false);
+      setTodasAbas([]);
+      setAbaSelecionada("");
+      setDescritores([]);
+    } finally {
+      setConectandoPlanilha(false);
+    }
+  };
+
+  // Se já havia uma URL salva anteriormente, tenta conectar ao carregar
+  useEffect(() => {
+    if (urlPlanilha.trim()) {
+      handleConectarPlanilha(urlPlanilha.trim());
+    }
+  }, []);
 
   // 1. Identifica o nível a partir do Ano Escolar / Turmas
   const nivelDetectado =
@@ -60,7 +110,7 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
 
   // 3. Tenta encontrar a aba ideal para a turma e bimestre
   useEffect(() => {
-    if (abasDoNivel.length > 0) {
+    if (planilhaConectada && abasDoNivel.length > 0) {
       const sufixoBim = obterSufixoBimestreRecuperacao(data.bimestre); // ex: "1B", "2B", "3B"
       const primeiraTurma =
         data.turmas && data.turmas.length > 0 ? data.turmas[0].nome : data.anoEscolar;
@@ -73,22 +123,27 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
         abasDoNivel.find((a) => a.includes(sufixoBim)) ||
         abasDoNivel[0];
 
-
       if (abaEncontrada && abaEncontrada !== abaSelecionada) {
         setAbaSelecionada(abaEncontrada);
       }
+    } else if (!planilhaConectada) {
+      setAbaSelecionada("");
+      setDescritores([]);
     }
-  }, [nivelDetectado, data.bimestre, data.anoEscolar, data.turmas, todasAbas]);
+  }, [planilhaConectada, nivelDetectado, data.bimestre, data.anoEscolar, data.turmas, todasAbas]);
 
   // 4. Carrega os descritores ao selecionar a aba ou mudar o componente curricular
   useEffect(() => {
-    if (!abaSelecionada) return;
+    if (!planilhaConectada || !abaSelecionada) {
+      setDescritores([]);
+      return;
+    }
 
     let ativo = true;
     setCarregando(true);
     setErroMsg("");
 
-    carregarDescritoresDaAba(abaSelecionada, data.componenteCurricular)
+    carregarDescritoresDaAba(abaSelecionada, data.componenteCurricular, urlPlanilha)
       .then((items) => {
         if (!ativo) return;
         setDescritores(items);
@@ -111,7 +166,7 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
       .catch((err) => {
         if (!ativo) return;
         console.error("Erro ao carregar aba da planilha:", err);
-        setErroMsg("Não foi possível conectar à planilha Google no momento.");
+        setErroMsg("Não foi possível carregar os descritores desta aba no momento.");
       })
       .finally(() => {
         if (ativo) setCarregando(false);
@@ -120,7 +175,8 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
     return () => {
       ativo = false;
     };
-  }, [abaSelecionada, data.componenteCurricular]);
+  }, [planilhaConectada, abaSelecionada, data.componenteCurricular, urlPlanilha]);
+
 
   // Extrai nome amigável da sala a partir do nome da aba (ex: "7A-1B" -> "7º A")
   const formatarNomeSala = (aba: string) => {
@@ -315,67 +371,119 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
         </div>
 
         {painelAberto && (
-          <div className="p-4 space-y-3">
-            {/* Controles de Nível e Seleção Restrita de Abas */}
-            <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-medium">Aba da Sala:</span>
-                <select
-                  value={abaSelecionada}
-                  onChange={(e) => setAbaSelecionada(e.target.value)}
-                  className="px-2.5 py-1.5 bg-white border border-slate-300 rounded font-bold text-slate-800 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+          <div className="p-4 space-y-4">
+            {/* Campo para o Professor Inserir o Link da Planilha do Google */}
+            <div className="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
+              <label className="block text-[11px] font-bold text-slate-700 uppercase">
+                Link da Planilha Google (Habilidades Diagnósticas):
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                    <Link className="w-3.5 h-3.5" />
+                  </div>
+                  <input
+                    type="text"
+                    value={urlPlanilha}
+                    onChange={(e) => {
+                      setUrlPlanilha(e.target.value);
+                      if (planilhaConectada) setPlanilhaConectada(false);
+                    }}
+                    placeholder="Cole aqui o link da planilha (ex: https://docs.google.com/spreadsheets/d/...)"
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono text-[11px]"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleConectarPlanilha()}
+                  disabled={conectandoPlanilha}
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-400 text-white font-semibold rounded text-xs transition-colors whitespace-nowrap shadow-2xs"
                 >
-                  {abasDoNivel.map((aba) => {
-                    const amigavel = formatarNomeSala(aba);
-                    return (
-                      <option key={aba} value={aba}>
-                        Turma {amigavel} (Aba {aba})
-                      </option>
-                    );
-                  })}
-                </select>
-
-                {nivelDetectado && (
-                  <span className="text-[11px] text-slate-400">
-                    (Restrito ao {nivelDetectado}º Ano)
-                  </span>
-                )}
-
+                  <RefreshCw className={`w-3.5 h-3.5 ${conectandoPlanilha ? "animate-spin" : ""}`} />
+                  <span>{conectandoPlanilha ? "Conectando..." : planilhaConectada ? "Atualizar Planilha" : "Conectar Planilha"}</span>
+                </button>
               </div>
 
-              {descritores.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleSelectAll}
-                    className="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded text-[11px] font-semibold transition-colors"
-                  >
-                    Marcar Todos
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleClearSelection}
-                    className="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-500 rounded text-[11px] font-semibold transition-colors"
-                  >
-                    Desmarcar
-                  </button>
+              {planilhaConectada && (
+                <div className="flex items-center gap-1.5 text-emerald-600 text-[11px] font-medium pt-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>Planilha conectada com sucesso ({todasAbas.length} abas identificadas).</span>
                 </div>
               )}
             </div>
 
-            {/* Estado de Carregamento / Erro */}
-            {carregando && (
-              <div className="flex items-center gap-2 text-xs text-amber-700 py-2">
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Carregando descritores da aba {abaSelecionada}...</span>
-              </div>
-            )}
-
+            {/* Mensagem de Erro */}
             {erroMsg && (
-              <p className="text-xs text-rose-600 bg-rose-50 p-2 rounded border border-rose-200">
+              <p className="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
                 {erroMsg}
               </p>
             )}
+
+            {/* Seletor de Turma/Aba e Ações só aparecem DEPOIS de conectar a planilha */}
+            {planilhaConectada ? (
+              <div className="space-y-3 pt-1 border-t border-slate-200/60">
+                <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-600 font-semibold">Aba da Sala:</span>
+                    <select
+                      value={abaSelecionada}
+                      onChange={(e) => setAbaSelecionada(e.target.value)}
+                      className="px-2.5 py-1.5 bg-white border border-slate-300 rounded font-bold text-slate-800 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                    >
+                      {abasDoNivel.map((aba) => {
+                        const amigavel = formatarNomeSala(aba);
+                        return (
+                          <option key={aba} value={aba}>
+                            Turma {amigavel} (Aba {aba})
+                          </option>
+                        );
+                      })}
+                    </select>
+
+                    {nivelDetectado && (
+                      <span className="text-[11px] text-slate-400">
+                        (Restrito ao {nivelDetectado}º Ano)
+                      </span>
+                    )}
+                  </div>
+
+                  {descritores.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSelectAll}
+                        className="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded text-[11px] font-semibold transition-colors"
+                      >
+                        Marcar Todos
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleClearSelection}
+                        className="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-500 rounded text-[11px] font-semibold transition-colors"
+                      >
+                        Desmarcar
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Estado de Carregamento */}
+                {carregando && (
+                  <div className="flex items-center gap-2 text-xs text-amber-700 py-2">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Carregando descritores da aba {abaSelecionada}...</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              !conectandoPlanilha && !erroMsg && (
+                <p className="text-xs text-slate-500 italic py-1">
+                  Cole o link da sua planilha acima e clique em <strong>Conectar Planilha</strong> para carregar as salas e habilidades disponíveis.
+                </p>
+              )
+            )}
+
 
             {/* LISTA COMPACTA DE DESCRITORES COM CHECKBOX */}
             {!carregando && descritores.length > 0 && (
