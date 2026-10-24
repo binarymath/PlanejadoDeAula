@@ -11,7 +11,7 @@ import {
   AlertCircle,
   HelpCircle,
 } from "lucide-react";
-import { LessonPlanState, TurmaPlanejada, FeriadoExcecao } from "../../types/lessonPlan";
+import { LessonPlanState, TurmaPlanejada, FeriadoExcecao, TipoEventoEscolar } from "../../types/lessonPlan";
 import { SPREADSHEETS_CONFIG } from "../../config/spreadsheets";
 import { SpreadsheetConnector } from "../common/SpreadsheetConnector";
 import { calcularAulasPrevistas } from "../../utils/classCalculator";
@@ -33,9 +33,11 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
   ];
   const feriados = Array.isArray(data.feriadosExcecoes) ? data.feriadosExcecoes : [];
 
-  // Estado para novo feriado
+  // Estado para novo evento / exceção
   const [novoFeriadoData, setNovoFeriadoData] = useState("");
+  const [novoFeriadoDataFim, setNovoFeriadoDataFim] = useState("");
   const [novoFeriadoMotivo, setNovoFeriadoMotivo] = useState("");
+  const [novoFeriadoTipo, setNovoFeriadoTipo] = useState<TipoEventoEscolar>("nao_letivo");
 
   // Recalcula as aulas sempre que mudar as datas, turmas ou feriados
   useEffect(() => {
@@ -157,19 +159,28 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
     );
   };
 
-  // Operações de Feriados
+  // Operações de Eventos Escolares e Feriados
   const handleAddFeriado = () => {
     if (!novoFeriadoData) {
-      alert("Selecione a data do feriado/dia sem aula.");
+      alert("Selecione a data de início do evento ou feriado.");
+      return;
+    }
+    if (novoFeriadoDataFim && novoFeriadoDataFim < novoFeriadoData) {
+      alert("A data de término não pode ser anterior à data de início.");
       return;
     }
     const novo: FeriadoExcecao = {
       id: String(Date.now()),
       data: novoFeriadoData,
-      motivo: novoFeriadoMotivo || "Sem aula / Ponto facultativo",
+      ...(novoFeriadoDataFim && novoFeriadoDataFim !== novoFeriadoData ? { dataFim: novoFeriadoDataFim } : {}),
+      motivo:
+        novoFeriadoMotivo ||
+        (novoFeriadoTipo === "letivo" ? "Evento Escolar Letivo" : "Sem aula / Ponto facultativo"),
+      tipo: novoFeriadoTipo,
     };
     onChange("feriadosExcecoes", [...(data.feriadosExcecoes || []), novo]);
     setNovoFeriadoData("");
+    setNovoFeriadoDataFim("");
     setNovoFeriadoMotivo("");
   };
 
@@ -350,69 +361,160 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
         </div>
       </div>
 
-      {/* FERIADOS E DIAS SEM AULA (ACIMA) */}
-      <div className="border border-amber-200 bg-amber-50/30 rounded-xl p-5 space-y-3">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-amber-600" />
-          <div>
-            <h3 className="text-sm font-bold text-slate-800">
-              Feriados, Pontos Facultativos e Dias Sem Aula
-            </h3>
-            <p className="text-xs text-slate-500">
-              Esses dias serão descontados automaticamente do total de aulas previstas no bimestre.
-            </p>
-          </div>
-        </div>
-
-        {/* Adicionar Feriado */}
-        <div className="flex flex-col sm:flex-row gap-2 items-center bg-white border border-slate-200 p-2.5 rounded-lg">
-          <input
-            type="date"
-            value={novoFeriadoData}
-            onChange={(e) => setNovoFeriadoData(e.target.value)}
-            className="w-full sm:w-44 px-3 py-1.5 border border-slate-300 rounded text-xs text-slate-800"
-          />
-          <input
-            type="text"
-            value={novoFeriadoMotivo}
-            onChange={(e) => setNovoFeriadoMotivo(e.target.value)}
-            placeholder="Motivo (ex: Carnaval, Reunião de Pais, Emenda...)"
-            className="flex-1 w-full px-3 py-1.5 border border-slate-300 rounded text-xs text-slate-800"
-          />
-          <button
-            type="button"
-            onClick={handleAddFeriado}
-            className="w-full sm:w-auto px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold transition-colors flex items-center justify-center gap-1"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Adicionar Dia
-          </button>
-        </div>
-
-        {/* Lista de Feriados Cadastrados */}
-        {feriados && feriados.length > 0 && (
-          <div className="flex flex-wrap gap-2 pt-1">
-            {feriados.map((f) => {
-              const [y, m, d] = f.data.split("-");
-              const dataFormatada = y && m && d ? `${d}/${m}` : f.data;
-              return (
-                <span
-                  key={f.id}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-amber-200 text-amber-900 rounded-full text-xs shadow-2xs"
-                >
-                  <span className="font-bold">{dataFormatada}</span>
-                  <span className="text-slate-600">({f.motivo})</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveFeriado(f.id)}
-                    className="text-slate-400 hover:text-rose-600 ml-0.5"
-                  >
-                    ×
-                  </button>
+      {/* EVENTOS ESCOLARES E CALENDÁRIO DO BIMESTRE */}
+      <div className="border border-indigo-200 bg-indigo-50/20 rounded-xl p-5 space-y-3.5">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <span>Eventos Escolares e Calendário do Bimestre</span>
+                <span className="text-[11px] font-semibold px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-full">
+                  {feriados.length} cadastrado(s)
                 </span>
-              );
-            })}
+              </h3>
+              <p className="text-xs text-slate-500">
+                Cadastre feriados e dias sem aula (não entram na contagem de aulas) ou eventos escolares (que contam normalmente na carga horária).
+              </p>
+            </div>
           </div>
+        </div>
+
+        {/* Adicionar Evento / Dia */}
+        <div className="flex flex-col lg:flex-row gap-2.5 items-stretch lg:items-center bg-white border border-slate-200 p-3 rounded-lg shadow-2xs">
+          <div className="flex items-center gap-2 w-full lg:w-72">
+            <div className="flex-1">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">
+                Início
+              </label>
+              <input
+                type="date"
+                value={novoFeriadoData}
+                onChange={(e) => setNovoFeriadoData(e.target.value)}
+                className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs text-slate-800 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5" title="Opcional se for de 1 único dia">
+                Término <span className="text-[9px] text-slate-400 font-normal">(Opc.)</span>
+              </label>
+              <input
+                type="date"
+                value={novoFeriadoDataFim}
+                min={novoFeriadoData || undefined}
+                onChange={(e) => setNovoFeriadoDataFim(e.target.value)}
+                className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs text-slate-800 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex-1 w-full">
+            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">
+              Nome ou Descrição do Evento
+            </label>
+            <input
+              type="text"
+              value={novoFeriadoMotivo}
+              onChange={(e) => setNovoFeriadoMotivo(e.target.value)}
+              placeholder="Ex: Carnaval, Semana Cultural, Reunião de Pais..."
+              className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs text-slate-800 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+            />
+          </div>
+
+          <div className="w-full lg:w-36">
+            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">
+              Impacto nas Aulas
+            </label>
+            <select
+              value={novoFeriadoTipo}
+              onChange={(e) => setNovoFeriadoTipo(e.target.value as TipoEventoEscolar)}
+              className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs text-slate-800 bg-white font-medium focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+            >
+              <option value="nao_letivo">Não Letivo</option>
+              <option value="letivo">Letivo</option>
+            </select>
+          </div>
+
+          <div className="pt-0 lg:pt-4">
+            <button
+              type="button"
+              onClick={handleAddFeriado}
+              className="w-full lg:w-auto px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Adicionar</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Lista de Eventos Cadastrados */}
+        {feriados && feriados.length > 0 ? (
+          <div className="space-y-1.5 pt-1">
+            <div className="flex flex-wrap gap-2">
+              {feriados.map((f) => {
+                const formatBRShort = (dt: string) => {
+                  const [y, m, d] = dt.split("-");
+                  return y && m && d ? `${d}/${m}` : dt;
+                };
+
+                const temPeriodo = Boolean(f.dataFim && f.dataFim > f.data);
+                const periodoFormatado = temPeriodo
+                  ? `${formatBRShort(f.data)} a ${formatBRShort(f.dataFim!)}`
+                  : formatBRShort(f.data);
+
+                const isLetivo = f.tipo === "letivo";
+
+                return (
+                  <span
+                    key={f.id}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs shadow-2xs border border-slate-200 bg-white text-slate-800"
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        isLetivo ? "bg-emerald-500" : "bg-rose-500"
+                      }`}
+                      title={isLetivo ? "Letivo (conta na contagem)" : "Não Letivo (não entra na contagem)"}
+                    />
+                    <span className="font-bold text-slate-900">{periodoFormatado}</span>
+                    <span className="text-slate-700 font-medium">{f.motivo}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-slate-100 text-slate-600 border border-slate-200/80">
+                      {isLetivo ? "Letivo" : "Sem aula"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFeriado(f.id)}
+                      className="text-slate-400 hover:text-rose-600 ml-1 font-bold text-sm leading-none"
+                      title="Remover evento"
+                    >
+                      ×
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+
+            {/* Resumo dinâmico de eventos */}
+            <div className="flex items-center gap-4 text-[11px] text-slate-500 pt-1">
+              <span>
+                • Dias não letivos descontados:{" "}
+                <strong className="text-rose-600 font-bold">
+                  {calculoAtual.feriadosDescontados} dia(s)
+                </strong>
+              </span>
+              <span>
+                • Eventos escolares letivos:{" "}
+                <strong className="text-emerald-700 font-bold">
+                  {calculoAtual.eventosLetivosTotais} evento(s)
+                </strong>
+              </span>
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-400 italic">
+            Nenhum evento ou feriado cadastrado para este bimestre.
+          </p>
         )}
       </div>
 

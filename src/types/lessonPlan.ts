@@ -15,11 +15,17 @@ export interface TurmaPlanejada {
   aulasSabadoLetivo?: number;
 }
 
+export type TipoEventoEscolar = "nao_letivo" | "letivo";
+
 export interface FeriadoExcecao {
   id: string;
-  data: string; // YYYY-MM-DD
-  motivo: string; // Ex: "Carnaval", "Reunião Pedagógica", "Ponto Facultativo"
+  data: string; // YYYY-MM-DD (Início do evento)
+  dataFim?: string; // YYYY-MM-DD (Término opcional do evento caso dure mais de um dia)
+  motivo: string; // Ex: "Carnaval", "Feira de Ciências", "Reunião de Pais"
+  tipo?: TipoEventoEscolar; // 'nao_letivo' (desconta da contagem) ou 'letivo' (mantém na contagem)
 }
+
+export type EventoEscolar = FeriadoExcecao;
 
 export interface LessonPlanState {
   // Dados da Escola
@@ -72,9 +78,9 @@ export const initialLessonPlanState: LessonPlanState = {
   controleFrequencia: "Acompanhamento diário no Diário Digital (SED)",
   turmas: initialTurmas,
   feriadosExcecoes: [
-    { id: "f1", data: "2026-02-16", motivo: "Carnaval (Segunda-feira)" },
-    { id: "f2", data: "2026-02-17", motivo: "Carnaval (Terça-feira)" },
-    { id: "f3", data: "2026-04-03", motivo: "Sexta-feira Santa" },
+    { id: "f1", data: "2026-02-16", motivo: "Carnaval (Segunda-feira)", tipo: "nao_letivo" },
+    { id: "f2", data: "2026-02-17", motivo: "Carnaval (Terça-feira)", tipo: "nao_letivo" },
+    { id: "f3", data: "2026-04-03", motivo: "Sexta-feira Santa", tipo: "nao_letivo" },
   ],
   aprendizagensNaoConsolidadas: "",
   objetosConhecimento: "",

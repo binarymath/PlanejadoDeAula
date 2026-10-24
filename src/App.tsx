@@ -5,7 +5,6 @@ import {
   Eye,
   Printer,
   CheckCircle,
-  FolderCog,
   UserCheck,
   AlertTriangle,
   BookOpen,
@@ -153,10 +152,10 @@ export const App: React.FC = () => {
               type="button"
               onClick={handleDownload}
               disabled={isExporting}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-sky-600 hover:bg-sky-700 disabled:bg-slate-400 text-white text-xs font-semibold rounded-lg shadow-sm transition-all"
+              title={isExporting ? "Gerando documento .DOCX..." : "Baixar documento .DOCX"}
+              className="p-2 border border-slate-300 hover:border-sky-500 hover:bg-sky-50 text-slate-700 hover:text-sky-700 disabled:opacity-50 disabled:pointer-events-none rounded-lg transition-colors flex items-center justify-center shadow-xs"
             >
-              <Download className={`w-4 h-4 ${isExporting ? "animate-bounce" : ""}`} />
-              {isExporting ? "Exportando..." : "Gerar Documento .DOCX"}
+              <FileText className={`w-4 h-4 ${isExporting ? "animate-pulse text-sky-600" : ""}`} />
             </button>
           </div>
         </div>
@@ -164,17 +163,6 @@ export const App: React.FC = () => {
 
       {/* Conteúdo Principal com Abas */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
-        {/* Aviso de Configuração de Planilhas */}
-        <div className="mb-4 bg-sky-50/60 border border-sky-200 rounded-lg p-3 text-xs text-sky-900 flex items-start gap-2.5">
-          <FolderCog className="w-4 h-4 text-sky-600 flex-shrink-0 mt-0.5" />
-          <div className="leading-relaxed">
-            <span className="font-semibold">Vínculo Direto de Planilhas:</span> Você pode definir os endereços de cada planilha diretamente no código no arquivo{" "}
-            <code className="bg-sky-100 px-1.5 py-0.5 rounded text-sky-950 font-mono text-[11px]">
-              src/config/spreadsheets.ts
-            </code>{" "}
-            ou digitar/colar a URL no cabeçalho de cada sessão abaixo. Cada módulo é isolado e alimenta sua respectiva parte do documento final.
-          </div>
-        </div>
 
         {/* Abas de Navegação */}
         <div className="bg-white rounded-t-xl border border-b-0 border-slate-200 p-2 overflow-x-auto flex gap-1 scrollbar-none">

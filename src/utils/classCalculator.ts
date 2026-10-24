@@ -5,7 +5,8 @@ export interface CalculoAulasResultado {
   totalAulasPorTurma: Record<string, number>;
   limiteFaltasPorTurma: Record<string, number>; // 25% com Math.floor
   diasLetivosTotais: number;
-  feriadosDescontados: number;
+  feriadosDescontados: number; // Dias não letivos que descontaram aulas
+  eventosLetivosTotais: number; // Eventos escolares que são letivos e contam aula normalmente
   resumoTextoTurmas: string;
   resumoTextoAulas: string;      // Apenas por turma: ex: "6º Ano A: 48 aulas | 6º Ano B: 42 aulas" (ou "48 aulas" se for 1 turma)
   resumoControleFrequencia: string; // ex: "6º Ano A: 12 faltas (25%) | 6º Ano B: 10 faltas (25%)" ou "12 faltas (máx. 25%)"
@@ -42,6 +43,7 @@ export function calcularAulasPrevistas(
     limiteFaltasPorTurma: {},
     diasLetivosTotais: 0,
     feriadosDescontados: 0,
+    eventosLetivosTotais: 0,
     resumoTextoTurmas: "",
     resumoTextoAulas: "",
     resumoControleFrequencia: "",
@@ -51,7 +53,37 @@ export function calcularAulasPrevistas(
     return result;
   }
 
-  const feriadosSet = new Set(feriados.map((f) => f.data.trim()));
+  // Mapeia eventos por data (expandindo intervalos de múltiplos dias quando houver dataFim)
+  const eventosPorData = new Map<string, FeriadoExcecao[]>();
+  feriados.forEach((f) => {
+    if (!f.data) return;
+    const inicioStr = f.data.trim();
+    const fimStr = (f.dataFim || f.data).trim();
+
+    if (fimStr && fimStr > inicioStr) {
+      const [iy, im, id] = inicioStr.split("-").map(Number);
+      const [fy, fm, fd] = fimStr.split("-").map(Number);
+      const cur = new Date(iy, im - 1, id);
+      const endEvt = new Date(fy, fm - 1, fd);
+
+      while (cur <= endEvt) {
+        const y = cur.getFullYear();
+        const m = String(cur.getMonth() + 1).padStart(2, "0");
+        const d = String(cur.getDate()).padStart(2, "0");
+        const k = `${y}-${m}-${d}`;
+        if (!eventosPorData.has(k)) {
+          eventosPorData.set(k, []);
+        }
+        eventosPorData.get(k)!.push(f);
+        cur.setDate(cur.getDate() + 1);
+      }
+    } else {
+      if (!eventosPorData.has(inicioStr)) {
+        eventosPorData.set(inicioStr, []);
+      }
+      eventosPorData.get(inicioStr)!.push(f);
+    }
+  });
 
   turmas.forEach((t) => {
     result.totalAulasPorTurma[t.id] = 0;
@@ -76,10 +108,19 @@ export function calcularAulasPrevistas(
     const dateFormatted = `${y}-${m}-${d}`;
 
     if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-      if (feriadosSet.has(dateFormatted)) {
+      const eventosNoDia = eventosPorData.get(dateFormatted) || [];
+      // Se tiver pelo menos um evento marcado como não letivo (ou sem tipo, por padrão retrocompatível é não letivo), desconta
+      const isNaoLetivo = eventosNoDia.some((e) => (e.tipo ?? "nao_letivo") === "nao_letivo");
+      const isEventoLetivo = eventosNoDia.some((e) => e.tipo === "letivo");
+
+      if (isNaoLetivo) {
         result.feriadosDescontados++;
       } else {
         result.diasLetivosTotais++;
+        if (isEventoLetivo) {
+          result.eventosLetivosTotais++;
+        }
+
         const chaveDia = getDiaChave(dayOfWeek);
 
         if (chaveDia) {

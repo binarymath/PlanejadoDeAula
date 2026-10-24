@@ -54,10 +54,33 @@ export function gerarCronogramaPorDatas(
 
   if (start > end) return "";
 
-  // Mapeia feriados para consulta rápida (data -> motivo)
-  const feriadosMap = new Map<string, string>();
+  // Mapeia eventos para consulta rápida (data -> lista de eventos com tipo, expandindo intervalos com dataFim)
+  const eventosMap = new Map<string, FeriadoExcecao[]>();
   feriados.forEach((f) => {
-    if (f.data) feriadosMap.set(f.data.trim(), f.motivo);
+    if (!f.data) return;
+    const inicioStr = f.data.trim();
+    const fimStr = (f.dataFim || f.data).trim();
+
+    if (fimStr && fimStr > inicioStr) {
+      const [iy, im, id] = inicioStr.split("-").map(Number);
+      const [fy, fm, fd] = fimStr.split("-").map(Number);
+      const cur = new Date(iy, im - 1, id);
+      const endEvt = new Date(fy, fm - 1, fd);
+
+      while (cur <= endEvt) {
+        const k = formatYYYYMMDD(cur);
+        if (!eventosMap.has(k)) {
+          eventosMap.set(k, []);
+        }
+        eventosMap.get(k)!.push(f);
+        cur.setDate(cur.getDate() + 1);
+      }
+    } else {
+      if (!eventosMap.has(inicioStr)) {
+        eventosMap.set(inicioStr, []);
+      }
+      eventosMap.get(inicioStr)!.push(f);
+    }
   });
 
   // Encontra a segunda-feira da semana de início
@@ -77,19 +100,23 @@ export function gerarCronogramaPorDatas(
     // Mês predominante da semana (usamos a sexta ou a segunda)
     const mesNome = MESES_PT[currentMonday.getMonth()];
 
-    // Verifica se há feriados dentro desta semana (Segunda a Sexta)
-    const feriadosNaSemana: string[] = [];
+    // Verifica se há eventos dentro desta semana (Segunda a Sexta)
+    const eventosNaSemana: string[] = [];
     const checkDay = new Date(currentMonday);
     for (let i = 0; i < 5; i++) {
       const dateKey = formatYYYYMMDD(checkDay);
-      if (feriadosMap.has(dateKey)) {
-        feriadosNaSemana.push(`${formatDDMM(checkDay)} - ${feriadosMap.get(dateKey)}`);
+      if (eventosMap.has(dateKey)) {
+        const evts = eventosMap.get(dateKey)!;
+        evts.forEach((e) => {
+          const tipoRotulo = e.tipo === "letivo" ? "Evento Letivo" : "Sem aula";
+          eventosNaSemana.push(`${formatDDMM(checkDay)} - ${e.motivo} (${tipoRotulo})`);
+        });
       }
       checkDay.setDate(checkDay.getDate() + 1);
     }
 
-    const obsFeriado = feriadosNaSemana.length > 0 ? ` [${feriadosNaSemana.join(", ")}]` : "";
-    const linhaSemana = `${formatDDMM(currentMonday)} a ${formatDDMM(currentFriday)}: ${obsFeriado}`;
+    const obsEvento = eventosNaSemana.length > 0 ? ` [${eventosNaSemana.join(", ")}]` : "";
+    const linhaSemana = `${formatDDMM(currentMonday)} a ${formatDDMM(currentFriday)}: ${obsEvento}`;
 
     if (!mesesMap.has(mesNome)) {
       mesesMap.set(mesNome, []);
@@ -134,9 +161,32 @@ export function obterSemanasEstruturadas(
   const end = new Date(y2, m2 - 1, d2);
   if (start > end) return [];
 
-  const feriadosMap = new Map<string, string>();
+  const eventosMap = new Map<string, FeriadoExcecao[]>();
   feriados.forEach((f) => {
-    if (f.data) feriadosMap.set(f.data.trim(), f.motivo);
+    if (!f.data) return;
+    const inicioStr = f.data.trim();
+    const fimStr = (f.dataFim || f.data).trim();
+
+    if (fimStr && fimStr > inicioStr) {
+      const [iy, im, id] = inicioStr.split("-").map(Number);
+      const [fy, fm, fd] = fimStr.split("-").map(Number);
+      const cur = new Date(iy, im - 1, id);
+      const endEvt = new Date(fy, fm - 1, fd);
+
+      while (cur <= endEvt) {
+        const k = formatYYYYMMDD(cur);
+        if (!eventosMap.has(k)) {
+          eventosMap.set(k, []);
+        }
+        eventosMap.get(k)!.push(f);
+        cur.setDate(cur.getDate() + 1);
+      }
+    } else {
+      if (!eventosMap.has(inicioStr)) {
+        eventosMap.set(inicioStr, []);
+      }
+      eventosMap.get(inicioStr)!.push(f);
+    }
   });
 
   const currentMonday = new Date(start);
@@ -155,8 +205,12 @@ export function obterSemanasEstruturadas(
     const checkDay = new Date(currentMonday);
     for (let i = 0; i < 5; i++) {
       const dateKey = formatYYYYMMDD(checkDay);
-      if (feriadosMap.has(dateKey)) {
-        feriadosNaSemana.push(`${formatDDMM(checkDay)} - ${feriadosMap.get(dateKey)}`);
+      if (eventosMap.has(dateKey)) {
+        const evts = eventosMap.get(dateKey)!;
+        evts.forEach((e) => {
+          const tipoRotulo = e.tipo === "letivo" ? "Evento Letivo" : "Sem aula";
+          feriadosNaSemana.push(`${formatDDMM(checkDay)} - ${e.motivo} (${tipoRotulo})`);
+        });
       }
       checkDay.setDate(checkDay.getDate() + 1);
     }

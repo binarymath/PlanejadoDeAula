@@ -1,5 +1,5 @@
 import React from "react";
-import { Download, X, Printer } from "lucide-react";
+import { Download, X, Printer, FileText } from "lucide-react";
 import { LessonPlanState } from "../../types/lessonPlan";
 import { getBimesterTitles } from "../../utils/bimesterHelper";
 import { formatarPorcentagem2Casas } from "../../services/googleSheetsService";
@@ -68,10 +68,10 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               type="button"
               onClick={onDownload}
               disabled={isExporting}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 disabled:bg-slate-400 text-white text-xs font-semibold rounded-lg shadow-sm transition-all"
+              title={isExporting ? "Gerando documento .DOCX..." : "Baixar documento .DOCX"}
+              className="p-1.5 border border-slate-300 hover:border-sky-500 hover:bg-sky-50 text-slate-600 hover:text-sky-700 disabled:opacity-50 disabled:pointer-events-none rounded-lg transition-colors flex items-center justify-center"
             >
-              <Download className={`w-3.5 h-3.5 ${isExporting ? "animate-bounce" : ""}`} />
-              {isExporting ? "Gerando..." : "Baixar .DOCX"}
+              <FileText className={`w-4 h-4 ${isExporting ? "animate-pulse text-sky-600" : ""}`} />
             </button>
 
             <button
