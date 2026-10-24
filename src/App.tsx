@@ -125,81 +125,80 @@ export const App: React.FC = () => {
       <div id="app-screen-content" className="flex flex-col flex-1 print:hidden">
         {/* Barra de Topo */}
         <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs print:hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-sky-600 text-white p-2 rounded-lg shadow-sm">
-              <FileText className="w-5 h-5" />
+          <div className="w-full px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-sky-600 text-white p-2 rounded-lg shadow-sm">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <h1 className="text-base font-bold text-slate-900 leading-tight">
+                  Planejador de Aula • Guia Bimestral
+                </h1>
+                <p className="text-xs text-slate-500">
+                  {data.nomeEscola ? `${data.nomeEscola} • SEDUC-SP` : "Planejamento Curricular Integrado • SEDUC-SP"}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-base font-bold text-slate-900 leading-tight">
-                Planejador de Aula • Guia Bimestral
-              </h1>
-              <p className="text-xs text-slate-500">
-                {data.nomeEscola ? `${data.nomeEscola} • SEDUC-SP` : "Planejamento Curricular Integrado • SEDUC-SP"}
-              </p>
+
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-xs flex items-center gap-1 transition-opacity ${
+                  savedFeedback ? "opacity-100 text-emerald-600 font-medium" : "opacity-0"
+                }`}
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                Salvo no navegador
+              </span>
+
+              {/* Botão para limpar campos / novo planejamento em branco */}
+              <button
+                type="button"
+                onClick={handleReset}
+                title="Iniciar novo planejamento em branco"
+                className="p-2 border border-slate-300 hover:border-rose-400 hover:bg-rose-50 text-slate-600 hover:text-rose-700 rounded-lg transition-colors flex items-center justify-center shadow-xs"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+
+              {/* Botão de impressora no canto superior direito para abrir a pré-visualização */}
+              <button
+                type="button"
+                onClick={() => setShowPreviewModal(true)}
+                title="Abrir pré-visualização para impressão"
+                className="p-2 border border-slate-300 hover:border-sky-500 hover:bg-sky-50 text-slate-700 hover:text-sky-700 rounded-lg transition-colors flex items-center justify-center shadow-xs"
+              >
+                <Printer className="w-4 h-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={isExporting}
+                title={isExporting ? "Gerando documento .DOCX..." : "Baixar documento .DOCX"}
+                className="p-2 border border-slate-300 hover:border-sky-500 hover:bg-sky-50 text-slate-700 hover:text-sky-700 disabled:opacity-50 disabled:pointer-events-none rounded-lg transition-colors flex items-center justify-center shadow-xs"
+              >
+                <FileText className={`w-4 h-4 ${isExporting ? "animate-pulse text-sky-600" : ""}`} />
+              </button>
             </div>
           </div>
+        </header>
 
-          <div className="flex items-center gap-2">
-            <span
-              className={`text-xs flex items-center gap-1 transition-opacity ${
-                savedFeedback ? "opacity-100 text-emerald-600 font-medium" : "opacity-0"
-              }`}
-            >
-              <CheckCircle className="w-3.5 h-3.5" />
-              Salvo no navegador
-            </span>
+        {/* Layout Principal com Sidebar encostada à esquerda e Conteúdo preenchendo 100% */}
+        <div className="flex-1 flex flex-col md:flex-row w-full">
+          {/* Backdrop escuro para mobile */}
+          {sidebarOpen && (
+            <div
+              className="fixed inset-0 bg-slate-900/50 z-40 md:hidden backdrop-blur-xs transition-opacity"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
 
-            {/* Botão para limpar campos / novo planejamento em branco */}
-            <button
-              type="button"
-              onClick={handleReset}
-              title="Iniciar novo planejamento em branco"
-              className="p-2 border border-slate-300 hover:border-rose-400 hover:bg-rose-50 text-slate-600 hover:text-rose-700 rounded-lg transition-colors flex items-center justify-center shadow-xs"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-
-            {/* Botão de impressora no canto superior direito para abrir a pré-visualização */}
-            <button
-              type="button"
-              onClick={() => setShowPreviewModal(true)}
-              title="Abrir pré-visualização para impressão"
-              className="p-2 border border-slate-300 hover:border-sky-500 hover:bg-sky-50 text-slate-700 hover:text-sky-700 rounded-lg transition-colors flex items-center justify-center shadow-xs"
-            >
-              <Printer className="w-4 h-4" />
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDownload}
-              disabled={isExporting}
-              title={isExporting ? "Gerando documento .DOCX..." : "Baixar documento .DOCX"}
-              className="p-2 border border-slate-300 hover:border-sky-500 hover:bg-sky-50 text-slate-700 hover:text-sky-700 disabled:opacity-50 disabled:pointer-events-none rounded-lg transition-colors flex items-center justify-center shadow-xs"
-            >
-              <FileText className={`w-4 h-4 ${isExporting ? "animate-pulse text-sky-600" : ""}`} />
-            </button>
-          </div>
-        </div>
-      </header>
-
-
-      {/* Layout Principal com Sidebar e Área de Conteúdo */}
-      <div className="flex-1 flex flex-col md:flex-row w-full max-w-[1600px] mx-auto">
-        {/* Backdrop escuro para mobile */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-slate-900/50 z-40 md:hidden backdrop-blur-xs transition-opacity"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-
-        {/* Sidebar Responsiva do Lado Esquerdo */}
-        <aside
-          className={`fixed md:sticky top-0 md:top-16 z-50 md:z-20 h-full md:h-[calc(100vh-4rem)] w-72 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-          } shadow-xl md:shadow-none`}
-        >
+          {/* Sidebar Encostada no Lado Esquerdo */}
+          <aside
+            className={`fixed md:sticky top-0 md:top-16 z-50 md:z-20 h-full md:h-[calc(100vh-4rem)] w-72 md:w-80 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out ${
+              sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+            } shadow-xl md:shadow-none`}
+          >
           {/* Cabeçalho do Sidebar (apenas no mobile para botão de fechar) */}
           <div className="flex items-center justify-between p-4 border-b border-slate-100 md:hidden">
             <span className="font-bold text-sm text-slate-800">Menu das Seções</span>
