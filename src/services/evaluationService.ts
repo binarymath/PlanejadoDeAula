@@ -6,7 +6,7 @@ export interface AvaliacaoItem {
   instrumento?: string;
 }
 
-export const AVALIACAO_SHEET_ID = "1UmgDMOnzGXXsWbYxtNN9I7R4wOHl-bPr_1DfPexZClY";
+export const AVALIACAO_SHEET_ID = "";
 
 export const AVALIACOES_PADRAO: AvaliacaoItem[] = [
   {
@@ -39,12 +39,16 @@ export const AVALIACOES_PADRAO: AvaliacaoItem[] = [
   }
 ];
 
-export async function fetchAvaliacaoPlanilha(): Promise<AvaliacaoItem[]> {
-  const url = `https://docs.google.com/spreadsheets/d/${AVALIACAO_SHEET_ID}/export?format=csv`;
+export async function fetchAvaliacaoPlanilha(customUrl?: string): Promise<AvaliacaoItem[]> {
+  const url = customUrl || (AVALIACAO_SHEET_ID ? `https://docs.google.com/spreadsheets/d/${AVALIACAO_SHEET_ID}/export?format=csv` : "");
+  if (!url) {
+    return AVALIACOES_PADRAO;
+  }
 
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Falha HTTP ${res.status}`);
+
     const csvText = await res.text();
     
     // Parse do CSV simples

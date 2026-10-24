@@ -80,7 +80,7 @@ export const SPREADSHEETS_CONFIG: Record<string, SheetConfig> = {
     id: "avaliacao",
     moduleName: "Critérios de Avaliação",
     description: "Critérios, rubricas, instrumentos avaliativos e pesos (Prova Paulista, Interna, Tarefas, Engajamento)",
-    spreadsheetUrl: "https://docs.google.com/spreadsheets/d/1UmgDMOnzGXXsWbYxtNN9I7R4wOHl-bPr_1DfPexZClY/edit?usp=sharing",
+    spreadsheetUrl: "", // <-- COLE AQUI O LINK DA PLANILHA DE AVALIAÇÃO
     sheetTabName: "Página1",
   },
 
@@ -89,7 +89,8 @@ export const SPREADSHEETS_CONFIG: Record<string, SheetConfig> = {
     id: "referencias",
     moduleName: "Referências e Materiais de Apoio",
     description: "Repositório SEDUC-SP, BNCC, Acervo CMSP 2026 e Currículo Paulista",
-    spreadsheetUrl: "https://docs.google.com/spreadsheets/d/1ABztg6sXaNaWpGLaGwKRE0xfrRoR4kkJpyyzRyYS_5Y/edit?usp=sharing",
+    spreadsheetUrl: "", // <-- COLE AQUI O LINK DA PLANILHA DE REFERÊNCIAS
     sheetTabName: "Página1",
   },
 };
+

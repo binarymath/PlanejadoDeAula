@@ -1,7 +1,9 @@
 import * as XLSX from "xlsx";
 
-export const GOOGLE_SHEET_ID = "11OP-VegdgrjtX4xeve5rwXHERFDeBPU72vT9O4vd-Z8";
-export const GOOGLE_SHEET_XLSX_URL = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=xlsx`;
+export const GOOGLE_SHEET_ID = "";
+export const GOOGLE_SHEET_XLSX_URL = GOOGLE_SHEET_ID
+  ? `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=xlsx`
+  : "";
 
 export interface DescritorHabilidade {
   id: string;
@@ -19,17 +21,22 @@ let cachedWorkbook: XLSX.WorkBook | null = null;
 let isFetchingWorkbook = false;
 
 /**
- * Baixa e armazena em cache o XLSX completo da planilha
+ * Baixa e armazena em cache o XLSX completo da planilha caso configurada
  */
-export async function getGoogleWorkbook(): Promise<XLSX.WorkBook> {
+export async function getGoogleWorkbook(customUrl?: string): Promise<XLSX.WorkBook | null> {
   if (cachedWorkbook) {
     return cachedWorkbook;
   }
 
+  const url = customUrl || GOOGLE_SHEET_XLSX_URL;
+  if (!url) {
+    return null;
+  }
+
   // Tenta baixar via fetch
-  const response = await fetch(GOOGLE_SHEET_XLSX_URL);
+  const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`Falha ao conectar à planilha do Google. Status: ${response.status}`);
+    throw new Error(`Falha ao conectar à planilha. Status: ${response.status}`);
   }
 
   const arrayBuffer = await response.arrayBuffer();
@@ -37,13 +44,15 @@ export async function getGoogleWorkbook(): Promise<XLSX.WorkBook> {
   return cachedWorkbook;
 }
 
+
 /**
  * Retorna todos os nomes de abas existentes na planilha
  */
 export async function getSheetNames(): Promise<string[]> {
   const wb = await getGoogleWorkbook();
-  return wb.SheetNames;
+  return wb ? wb.SheetNames : [];
 }
+
 
 /**
  * Converte qualquer valor numérico ou decimal (ex: 0.086956..., "87,9%", "0.1")
@@ -138,8 +147,10 @@ export async function carregarDescritoresDaAba(
   componenteFiltro?: string
 ): Promise<DescritorHabilidade[]> {
   const wb = await getGoogleWorkbook();
+  if (!wb) return [];
   const ws = wb.Sheets[abaNome];
   if (!ws) return [];
+
 
   const rawRows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
   const descritores: DescritorHabilidade[] = [];

@@ -8,7 +8,7 @@ export interface ReferenciaItem {
   descricao?: string;
 }
 
-export const REFERENCIAS_SHEET_ID = "1ABztg6sXaNaWpGLaGwKRE0xfrRoR4kkJpyyzRyYS_5Y";
+export const REFERENCIAS_SHEET_ID = "";
 
 export const REFERENCIAS_PADRAO: ReferenciaItem[] = [
   {
@@ -49,12 +49,16 @@ export const REFERENCIAS_PADRAO: ReferenciaItem[] = [
   }
 ];
 
-export async function fetchReferenciasPlanilha(): Promise<ReferenciaItem[]> {
-  const url = `https://docs.google.com/spreadsheets/d/${REFERENCIAS_SHEET_ID}/export?format=csv`;
+export async function fetchReferenciasPlanilha(customUrl?: string): Promise<ReferenciaItem[]> {
+  const url = customUrl || (REFERENCIAS_SHEET_ID ? `https://docs.google.com/spreadsheets/d/${REFERENCIAS_SHEET_ID}/export?format=csv` : "");
+  if (!url) {
+    return REFERENCIAS_PADRAO;
+  }
 
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Falha HTTP ${res.status}`);
+
     const csvText = await res.text();
 
     const lines = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0);

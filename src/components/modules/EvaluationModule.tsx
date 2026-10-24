@@ -3,7 +3,6 @@ import {
   Award,
   Check,
   RefreshCw,
-  ExternalLink,
   Plus,
   HelpCircle,
   Percent,
@@ -17,9 +16,9 @@ import { LessonPlanState } from "../../types/lessonPlan";
 import {
   AvaliacaoItem,
   fetchAvaliacaoPlanilha,
-  AVALIACAO_SHEET_ID,
   AVALIACOES_PADRAO
 } from "../../services/evaluationService";
+
 
 interface EvaluationModuleProps {
   data: LessonPlanState;
@@ -173,25 +172,17 @@ export const EvaluationModule: React.FC<EvaluationModuleProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <a
-            href={`https://docs.google.com/spreadsheets/d/${AVALIACAO_SHEET_ID}/edit?usp=sharing`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
-            <span>Ver Planilha</span>
-          </a>
           <button
             type="button"
             onClick={handleReload}
             disabled={loading}
             className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-            title="Recarregar dados da planilha"
+            title="Recarregar dados"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-indigo-600" : ""}`} />
           </button>
         </div>
+
       </div>
 
       {/* Painel Informativo da Composição da Nota Bimestral (100%) */}

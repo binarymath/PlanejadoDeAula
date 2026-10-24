@@ -1,8 +1,10 @@
 import * as XLSX from "xlsx";
 import metodologiasLocais from "../config/metodologias_ativas.json";
 
-export const METODOLOGIAS_SHEET_ID = "119__yTf8XwVuvv3lFbu67RcsklH5ZJkNo_7jkDOr_Fk";
-export const METODOLOGIAS_XLSX_URL = `https://docs.google.com/spreadsheets/d/${METODOLOGIAS_SHEET_ID}/export?format=xlsx`;
+export const METODOLOGIAS_SHEET_ID = "";
+export const METODOLOGIAS_XLSX_URL = METODOLOGIAS_SHEET_ID
+  ? `https://docs.google.com/spreadsheets/d/${METODOLOGIAS_SHEET_ID}/export?format=xlsx`
+  : "";
 
 export interface MetodologiaAtivaItem {
   id: string;
@@ -18,13 +20,14 @@ let cachedMetodologiasWorkbook: XLSX.WorkBook | null = null;
 
 export async function carregarMetodologiasAtivas(): Promise<MetodologiaAtivaItem[]> {
   try {
-    if (!cachedMetodologiasWorkbook) {
+    if (METODOLOGIAS_XLSX_URL && !cachedMetodologiasWorkbook) {
       const resp = await fetch(METODOLOGIAS_XLSX_URL);
       if (resp.ok) {
         const ab = await resp.arrayBuffer();
         cachedMetodologiasWorkbook = XLSX.read(ab, { type: "array" });
       }
     }
+
 
     if (cachedMetodologiasWorkbook) {
       const sheetName = cachedMetodologiasWorkbook.SheetNames[0];

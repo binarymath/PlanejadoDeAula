@@ -1,8 +1,10 @@
 import * as XLSX from "xlsx";
 import curriculoLocal from "../config/curriculo_matematica.json";
 
-export const CURRICULO_SHEET_ID = "1VAd4wV-MuacQrV2Im9wybtsQpZiJPI4_qAnlFF4DmcI";
-export const CURRICULO_XLSX_URL = `https://docs.google.com/spreadsheets/d/${CURRICULO_SHEET_ID}/export?format=xlsx`;
+export const CURRICULO_SHEET_ID = "";
+export const CURRICULO_XLSX_URL = CURRICULO_SHEET_ID
+  ? `https://docs.google.com/spreadsheets/d/${CURRICULO_SHEET_ID}/export?format=xlsx`
+  : "";
 
 export interface AulaCurriculoItem {
   id: string;
@@ -29,7 +31,7 @@ let cachedCurriculoWorkbook: XLSX.WorkBook | null = null;
 
 /**
  * Obtém todas as aulas do ano e bimestre informados,
- * primeiro tentando a planilha online (com fallback instantâneo no catálogo local).
+ * primeiro tentando a planilha online caso configurada (com fallback instantâneo no catálogo local).
  */
 export async function obterAulasCurriculo(
   anoTexto: string,
@@ -47,15 +49,16 @@ export async function obterAulasCurriculo(
   const bimNumero = bimNorm.match(/([1234])/)?.[1] || "1";
   const bimEsperado = `${bimNumero}º Bimestre`;
 
-  // Tenta carregar do cache online se disponível
+  // Tenta carregar da planilha remota se uma URL válida for configurada
   try {
-    if (!cachedCurriculoWorkbook) {
+    if (CURRICULO_XLSX_URL && !cachedCurriculoWorkbook) {
       const resp = await fetch(CURRICULO_XLSX_URL);
       if (resp.ok) {
         const ab = await resp.arrayBuffer();
         cachedCurriculoWorkbook = XLSX.read(ab, { type: "array" });
       }
     }
+
 
     if (cachedCurriculoWorkbook && cachedCurriculoWorkbook.Sheets[sheetName]) {
       const rows: any[][] = XLSX.utils.sheet_to_json(cachedCurriculoWorkbook.Sheets[sheetName], {

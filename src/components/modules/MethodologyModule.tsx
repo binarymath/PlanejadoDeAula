@@ -8,7 +8,6 @@ import {
   Eye,
   ChevronDown,
   ChevronUp,
-  ExternalLink,
   Users,
   User,
   GraduationCap,
@@ -17,8 +16,8 @@ import { LessonPlanState } from "../../types/lessonPlan";
 import {
   carregarMetodologiasAtivas,
   MetodologiaAtivaItem,
-  METODOLOGIAS_SHEET_ID,
 } from "../../services/methodologyService";
+
 import { MethodologyDetailModal } from "../common/MethodologyDetailModal";
 
 interface MethodologyModuleProps {
@@ -154,16 +153,6 @@ export const MethodologyModule: React.FC<MethodologyModuleProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
-            <a
-              href={`https://docs.google.com/spreadsheets/d/${METODOLOGIAS_SHEET_ID}/edit`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs text-blue-700 hover:text-blue-900 inline-flex items-center gap-1 font-medium"
-            >
-              <span>Ver Planilha</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-
             <button
               type="button"
               onClick={() => setPainelAberto(!painelAberto)}
@@ -173,6 +162,7 @@ export const MethodologyModule: React.FC<MethodologyModuleProps> = ({
               {painelAberto ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
           </div>
+
         </div>
 
         {painelAberto && (

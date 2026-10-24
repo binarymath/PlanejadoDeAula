@@ -15,9 +15,9 @@ import { LessonPlanState } from "../../types/lessonPlan";
 import {
   ReferenciaItem,
   fetchReferenciasPlanilha,
-  REFERENCIAS_SHEET_ID,
   REFERENCIAS_PADRAO
 } from "../../services/referencesService";
+
 
 interface ReferencesModuleProps {
   data: LessonPlanState;
@@ -140,25 +140,17 @@ export const ReferencesModule: React.FC<ReferencesModuleProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <a
-            href={`https://docs.google.com/spreadsheets/d/${REFERENCIAS_SHEET_ID}/edit?usp=sharing`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
-            <span>Ver Planilha</span>
-          </a>
           <button
             type="button"
             onClick={handleReload}
             disabled={loading}
             className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            title="Recarregar dados da planilha"
+            title="Recarregar dados"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
           </button>
         </div>
+
       </div>
 
       {/* Painel com Cards Interativos das Referências da Planilha Oficial */}

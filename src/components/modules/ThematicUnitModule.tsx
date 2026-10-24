@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronUp,
   RefreshCw,
-  ExternalLink,
   Info,
 } from "lucide-react";
 import { LessonPlanState } from "../../types/lessonPlan";
@@ -17,8 +16,8 @@ import {
   GrupoAprendizagemEssencial,
   obterAulasCurriculo,
   agruparPorAprendizagemEssencial,
-  CURRICULO_SHEET_ID,
 } from "../../services/curriculumService";
+
 
 interface ThematicUnitModuleProps {
   data: LessonPlanState;
@@ -153,16 +152,6 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
 
 
           <div className="flex items-center gap-3">
-            <a
-              href={`https://docs.google.com/spreadsheets/d/${CURRICULO_SHEET_ID}/edit`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1"
-            >
-              <span>Ver Planilha</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-
             <button
               type="button"
               onClick={() => setPainelAberto(!painelAberto)}
@@ -172,6 +161,7 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
               {painelAberto ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
           </div>
+
         </div>
 
         {painelAberto && (
