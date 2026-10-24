@@ -366,11 +366,12 @@ export const App: React.FC = () => {
         isExporting={isExporting}
       />
 
-      {/* Modal de Configuração de Links por JSON */}
+      {/* Modal de Backup e Restauração Completa por JSON */}
       <ConfigLinksModal
         isOpen={showConfigLinksModal}
         onClose={() => setShowConfigLinksModal(false)}
-        disciplinaAtual={data.componenteCurricular}
+        dadosAtuais={data}
+        onRestaurarDados={(novosDados) => setData(novosDados)}
       />
     </div>
   );

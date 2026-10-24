@@ -9,71 +9,63 @@ import {
   Link,
   Copy,
   Check,
-  BookOpen,
+  RotateCcw,
+  Shield,
+  FileCheck2,
 } from "lucide-react";
+import { LessonPlanState } from "../../types/lessonPlan";
 import {
-  ConfiguracaoLinksJSON,
   obterConfiguracaoLinks,
-  salvarConfiguracaoLinks,
-  gerarModeloConfiguracaoAtual,
+  gerarBackupCompleto,
+  restaurarBackupCompleto,
 } from "../../services/configLinksService";
 
 interface ConfigLinksModalProps {
   isOpen: boolean;
   onClose: () => void;
-  disciplinaAtual?: string;
-  onLinksAtualizados?: () => void;
+  dadosAtuais: LessonPlanState;
+  onRestaurarDados: (novosDados: LessonPlanState) => void;
 }
 
 export const ConfigLinksModal: React.FC<ConfigLinksModalProps> = ({
   isOpen,
   onClose,
-  disciplinaAtual,
-  onLinksAtualizados,
+  dadosAtuais,
+  onRestaurarDados,
 }) => {
   const [jsonTexto, setJsonTexto] = useState<string>("");
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; mensagem: string } | null>(null);
   const [copiado, setCopiado] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Inicializa com a configuração atual ou modelo padrão
+  // Inicializa o editor com o backup completo do sistema atual
   useEffect(() => {
     if (isOpen) {
-      const configSalva = obterConfiguracaoLinks();
-      const modelo = configSalva || gerarModeloConfiguracaoAtual(disciplinaAtual);
-      setJsonTexto(JSON.stringify(modelo, null, 2));
+      const backup = gerarBackupCompleto(dadosAtuais);
+      setJsonTexto(JSON.stringify(backup, null, 2));
       setFeedback(null);
     }
-  }, [isOpen, disciplinaAtual]);
+  }, [isOpen, dadosAtuais]);
 
   if (!isOpen) return null;
 
-  const handleSalvarTexto = () => {
+  const handleSalvarOuRestaurar = () => {
     try {
       setFeedback(null);
-      const parsed: ConfiguracaoLinksJSON = JSON.parse(jsonTexto);
-
-      if (!parsed || typeof parsed !== "object") {
-        throw new Error("O conteúdo precisa ser um objeto JSON válido.");
-      }
-
-      salvarConfiguracaoLinks(parsed, disciplinaAtual);
+      const parsed = JSON.parse(jsonTexto);
+      const resultado = restaurarBackupCompleto(parsed, onRestaurarDados);
       setFeedback({
         tipo: "sucesso",
-        mensagem: "Links e disciplinas configurados e sincronizados com sucesso! ✔",
+        mensagem: resultado.mensagem,
       });
-
-      if (onLinksAtualizados) {
-        onLinksAtualizados();
-      }
 
       setTimeout(() => {
         onClose();
-      }, 1400);
+      }, 1500);
     } catch (e: any) {
       setFeedback({
         tipo: "erro",
-        mensagem: `Erro na estrutura do JSON: ${e.message}`,
+        mensagem: `Erro ao processar o arquivo JSON: ${e.message}`,
       });
     }
   };
@@ -86,21 +78,17 @@ export const ConfigLinksModal: React.FC<ConfigLinksModalProps> = ({
     reader.onload = (event) => {
       try {
         const conteudo = event.target?.result as string;
-        const parsed: ConfiguracaoLinksJSON = JSON.parse(conteudo);
+        const parsed = JSON.parse(conteudo);
         setJsonTexto(JSON.stringify(parsed, null, 2));
-        salvarConfiguracaoLinks(parsed, disciplinaAtual);
+        const resultado = restaurarBackupCompleto(parsed, onRestaurarDados);
         setFeedback({
           tipo: "sucesso",
-          mensagem: `Arquivo "${file.name}" importado e sincronizado com sucesso! ✔`,
+          mensagem: `Arquivo "${file.name}" importado e restaurado com sucesso! ✔`,
         });
-
-        if (onLinksAtualizados) {
-          onLinksAtualizados();
-        }
 
         setTimeout(() => {
           onClose();
-        }, 1400);
+        }, 1500);
       } catch (err: any) {
         setFeedback({
           tipo: "erro",
@@ -112,33 +100,30 @@ export const ConfigLinksModal: React.FC<ConfigLinksModalProps> = ({
     e.target.value = "";
   };
 
-  const handleBaixarModelo = () => {
+  const handleBaixarBackup = () => {
     try {
-      const modelo = jsonTexto.trim() ? JSON.parse(jsonTexto) : gerarModeloConfiguracaoAtual(disciplinaAtual);
-      const blob = new Blob([JSON.stringify(modelo, null, 2)], { type: "application/json" });
+      const backup = gerarBackupCompleto(dadosAtuais);
+      const nomeArquivo = `backup-planejamento-${dadosAtuais.componenteCurricular || "aula"}-${
+        dadosAtuais.bimestre || "bimestre"
+      }.json`
+        .toLowerCase()
+        .replace(/\s+/g, "-");
+
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "configuracao-planilhas-planejador.json";
+      a.download = nomeArquivo;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (e) {
-      const modelo = gerarModeloConfiguracaoAtual(disciplinaAtual);
-      const blob = new Blob([JSON.stringify(modelo, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "configuracao-planilhas-planejador.json";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      alert("Erro ao gerar download do backup: " + e.message);
     }
   };
 
-  const handleCopiarExemplo = () => {
+  const handleCopiar = () => {
     navigator.clipboard.writeText(jsonTexto);
     setCopiado(true);
     setTimeout(() => setCopiado(false), 2000);
@@ -146,19 +131,19 @@ export const ConfigLinksModal: React.FC<ConfigLinksModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Cabeçalho */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/70">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/80">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-sky-100 text-sky-700 rounded-xl">
+            <div className="p-2.5 bg-sky-600 text-white rounded-xl shadow-xs">
               <FileJson className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-800">
-                Configuração Rápida de Planilhas via .JSON
+              <h3 className="text-base font-bold text-slate-900">
+                Backup e Restauração Completa do Sistema (.JSON)
               </h3>
               <p className="text-xs text-slate-500">
-                Cadastre seus links gerais e disciplinas para sincronizar tudo com 1 clique
+                Salve ou restaure seus links de planilhas, disciplinas e dados pedagógicos em 1 clique
               </p>
             </div>
           </div>
@@ -186,29 +171,45 @@ export const ConfigLinksModal: React.FC<ConfigLinksModalProps> = ({
               ) : (
                 <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
               )}
-              <span className="font-medium">{feedback.mensagem}</span>
+              <span className="font-semibold">{feedback.mensagem}</span>
             </div>
           )}
 
-          {/* Dicas e Instruções */}
-          <div className="bg-sky-50/60 border border-sky-100 rounded-xl p-3.5 text-xs text-slate-600 space-y-1.5 leading-relaxed">
-            <p className="font-semibold text-sky-900 flex items-center gap-1.5">
-              <BookOpen className="w-4 h-4 text-sky-600" />
-              Como funciona o arquivo de links:
-            </p>
-            <p>
-              • Cole ou carregue seu arquivo <strong>.json</strong> com os links das planilhas.
-            </p>
-            <p>
-              • O bloco <code>disciplinas</code> cria automaticamente as opções no seletor da tela <strong>1. Identificação</strong> e conecta a planilha de conteúdos da matéria escolhida.
-            </p>
-            <p className="text-[11px] text-slate-500">
-              * A sua chave de IA do Gemini <strong>não</strong> faz parte deste JSON, garantindo sua privacidade pessoal.
-            </p>
+          {/* Destaque de Segurança e Instruções */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
+                <Shield className="w-4 h-4 text-emerald-600" />
+                <span>Privacidade Pessoal</span>
+              </div>
+              <p className="text-[11px] text-emerald-700 leading-relaxed">
+                Sua chave de API do Gemini <strong>nunca</strong> é incluída no JSON, mantendo seu acesso 100% protegido.
+              </p>
+            </div>
+
+            <div className="p-3 bg-sky-50/70 border border-sky-200 rounded-xl space-y-1">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-sky-800">
+                <FileCheck2 className="w-4 h-4 text-sky-600" />
+                <span>Backup Integral</span>
+              </div>
+              <p className="text-[11px] text-sky-700 leading-relaxed">
+                Guarda escola, turmas, feriados, textos gerados, links de planilhas e opções de disciplinas.
+              </p>
+            </div>
+
+            <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-1">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-800">
+                <RotateCcw className="w-4 h-4 text-indigo-600" />
+                <span>Restauração Fácil</span>
+              </div>
+              <p className="text-[11px] text-indigo-700 leading-relaxed">
+                Mesmo limpando o cache ou trocando de computador, restaure todo o trabalho enviando o arquivo.
+              </p>
+            </div>
           </div>
 
-          {/* Barra de Ações Rápidas */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+          {/* Barra de Ações de Importar e Baixar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
             <input
               type="file"
               ref={fileInputRef}
@@ -220,67 +221,70 @@ export const ConfigLinksModal: React.FC<ConfigLinksModalProps> = ({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-lg text-xs font-semibold transition-all shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold transition-all shadow-2xs"
             >
               <Upload className="w-3.5 h-3.5" />
-              <span>Carregar arquivo .json</span>
+              <span>Enviar Arquivo .JSON para Restaurar</span>
             </button>
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={handleCopiarExemplo}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg text-xs font-medium border border-slate-200 transition-colors"
+                onClick={handleCopiar}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-slate-700 hover:bg-slate-100 rounded-lg text-xs font-medium border border-slate-200 transition-colors"
                 title="Copiar texto JSON"
               >
                 {copiado ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiado ? "Copiado!" : "Copiar JSON"}</span>
+                <span>{copiado ? "Copiado!" : "Copiar"}</span>
               </button>
 
               <button
                 type="button"
-                onClick={handleBaixarModelo}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg text-xs font-semibold border border-slate-200 transition-colors shadow-2xs"
-                title="Baixar arquivo configuracao-planilhas.json com links atuais"
+                onClick={handleBaixarBackup}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-2xs"
+                title="Baixar arquivo de backup do sistema atual"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Baixar Modelo / Backup</span>
+                <span>Baixar Backup Completo (.JSON)</span>
               </button>
             </div>
           </div>
 
-          {/* Editor de Texto do JSON */}
+          {/* Visualizador / Editor JSON */}
           <div className="space-y-1">
-            <label className="block text-xs font-semibold text-slate-600 uppercase">
-              Conteúdo JSON da Configuração:
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold text-slate-700 uppercase">
+                Visualização do Conteúdo do Backup (JSON):
+              </label>
+              <span className="text-[11px] text-slate-400">Você pode colar um JSON aqui diretamente</span>
+            </div>
             <textarea
-              rows={11}
+              rows={12}
               value={jsonTexto}
               onChange={(e) => setJsonTexto(e.target.value)}
-              placeholder='{\n  "planilhasGerais": { ... },\n  "disciplinas": { ... }\n}'
-              className="w-full px-3.5 py-2.5 bg-slate-900 text-emerald-400 font-mono text-xs rounded-xl border border-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all leading-relaxed"
+              placeholder="Cole o arquivo JSON de backup aqui..."
+              className="w-full px-4 py-3 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-xl border border-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all leading-relaxed"
             />
           </div>
         </div>
 
-        {/* Rodapé com Salvar */}
+        {/* Rodapé com Sincronizar / Restaurar */}
         <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
           <button
             type="button"
             onClick={onClose}
             className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-lg transition-colors"
           >
-            Cancelar
+            Fechar
           </button>
 
           <button
             type="button"
-            onClick={handleSalvarTexto}
+            onClick={handleSalvarOuRestaurar}
             className="inline-flex items-center gap-1.5 px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm"
           >
             <Link className="w-3.5 h-3.5" />
-            <span>Sincronizar Links no Sistema</span>
+            <span>Aplicar e Restaurar Dados</span>
           </button>
         </div>
       </div>

@@ -58,10 +58,11 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             <button
               type="button"
               onClick={() => window.print()}
-              title="Imprimir documento"
-              className="p-1.5 border border-slate-300 hover:border-sky-500 hover:bg-sky-50 text-slate-600 hover:text-sky-700 rounded-lg transition-colors flex items-center justify-center"
+              title="Salvar como PDF ou Imprimir documento oficial"
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
             >
-              <Printer className="w-4 h-4" />
+              <Printer className="w-3.5 h-3.5" />
+              <span>Salvar PDF / Imprimir</span>
             </button>
 
             <button
