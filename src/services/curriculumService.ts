@@ -99,10 +99,15 @@ export async function obterAulasCurriculo(
       if (itens.length > 0) return itens;
     }
   } catch (err) {
-    console.warn("Usando catálogo local de currículo:", err);
+    console.warn("Erro ao ler planilha de currículo:", err);
   }
 
-  // Fallback nos dados locais catalogados
+  // Se não foi informada ou conectada nenhuma planilha, não traz dados pré-definidos
+  if (!targetUrl && !cachedCurriculoWorkbook) {
+    return [];
+  }
+
+  // Fallback nos dados locais catalogados somente se o usuário estava tentando ler uma planilha existente
   const localAba = (curriculoLocal as Record<string, AulaCurriculoItem[]>)[sheetName] || [];
   return localAba.filter((item) => item.bimestre.includes(`${bimNumero}º`));
 }

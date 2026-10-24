@@ -184,60 +184,66 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
         </form>
       )}
 
-      {/* Seletor da Coluna da Planilha de Objetos de Conhecimento */}
-      <div className="bg-white p-3.5 rounded-lg border border-sky-200/80 space-y-2">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-          <Columns className="w-4 h-4 text-sky-600" />
-          <span>Escolha a coluna da planilha de Objetos de Conhecimento para o cronograma:</span>
-        </div>
+      {/* Seletor da Coluna da Planilha de Objetos de Conhecimento - Exibido apenas após conexão */}
+      {aulasCurriculo.length > 0 ? (
+        <div className="bg-white p-3.5 rounded-lg border border-sky-200/80 space-y-2">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+            <Columns className="w-4 h-4 text-sky-600" />
+            <span>Escolha a coluna da planilha de Objetos de Conhecimento para o cronograma:</span>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1">
-          {COLUNAS_CURRICULO_DISPONIVEIS.map((col) => {
-            const isSelected = colunaEscolhida === col.id;
-            return (
-              <button
-                key={col.id}
-                type="button"
-                onClick={() => onColunaChange(col.id)}
-                className={`text-left p-2.5 rounded-lg border text-xs transition-all ${
-                  isSelected
-                    ? "bg-sky-50 border-sky-500 ring-1 ring-sky-500 text-sky-950 font-semibold"
-                    : "bg-slate-50/70 border-slate-200 text-slate-600 hover:bg-slate-100"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span>{col.label}</span>
-                  {isSelected && <span className="text-[10px] bg-sky-600 text-white px-1.5 py-0.2 rounded font-bold">Ativa</span>}
-                </div>
-                <p className="text-[10px] text-slate-400 font-normal mt-0.5 line-clamp-1">
-                  {col.descricao}
-                </p>
-              </button>
-            );
-          })}
-        </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1">
+            {COLUNAS_CURRICULO_DISPONIVEIS.map((col) => {
+              const isSelected = colunaEscolhida === col.id;
+              return (
+                <button
+                  key={col.id}
+                  type="button"
+                  onClick={() => onColunaChange(col.id)}
+                  className={`text-left p-2.5 rounded-lg border text-xs transition-all ${
+                    isSelected
+                      ? "bg-sky-50 border-sky-500 ring-1 ring-sky-500 text-sky-950 font-semibold"
+                      : "bg-slate-50/70 border-slate-200 text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>{col.label}</span>
+                    {isSelected && <span className="text-[10px] bg-sky-600 text-white px-1.5 py-0.2 rounded font-bold">Ativa</span>}
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-normal mt-0.5 line-clamp-1">
+                    {col.descricao}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Botão de Sugestão com 1 Clique */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 mt-2">
-          <span className="text-[11px] text-slate-500">
-            {aulasCurriculo.length} aulas cadastradas nesta aba da planilha • {semanas.length} semanas letivas
-          </span>
+          {/* Botão de Sugestão com 1 Clique */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 mt-2">
+            <span className="text-[11px] text-slate-500">
+              {aulasCurriculo.length} aulas cadastradas nesta aba da planilha • {semanas.length} semanas letivas
+            </span>
 
-          <button
-            type="button"
-            disabled={carregando}
-            onClick={handleSugerirCronogramaCompleto}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors"
-          >
-            {carregando ? (
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Sparkles className="w-3.5 h-3.5" />
-            )}
-            <span>Sugerir Cronograma Completo com Gemini</span>
-          </button>
+            <button
+              type="button"
+              disabled={carregando}
+              onClick={handleSugerirCronogramaCompleto}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors"
+            >
+              {carregando ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="w-3.5 h-3.5" />
+              )}
+              <span>Sugerir Cronograma Completo com Gemini</span>
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center text-xs text-slate-500">
+          Conecte a planilha de Currículo / Objetos de Conhecimento na Seção 3 para habilitar a escolha das colunas e a geração automática do cronograma com o Gemini.
+        </div>
+      )}
 
       {/* Caixa de Diálogo / Chat Interativo */}
       <div className="bg-white rounded-lg border border-sky-200 overflow-hidden flex flex-col">

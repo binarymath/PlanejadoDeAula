@@ -9,6 +9,8 @@ import {
 import { ColunaCurriculoOpcao } from "../../services/geminiScheduleService";
 import { GeminiScheduleAssistant } from "../common/GeminiScheduleAssistant";
 
+const STORAGE_CURRICULO_URL_KEY = "planejador_url_planilha_curriculo";
+
 interface ScheduleModuleProps {
   data: LessonPlanState;
   onChange: (field: keyof LessonPlanState, value: string) => void;
@@ -25,12 +27,16 @@ export const ScheduleModule: React.FC<ScheduleModuleProps> = ({
   const anoAtivo = data.anoEscolar || (data.turmas && data.turmas.length > 0 && data.turmas[0].nome ? data.turmas[0].nome : "");
   const bimestreAtivo = data.bimestre || "";
 
-
-  // Carrega as aulas da aba correspondente da planilha de Objetos de Conhecimento
+  // Carrega as aulas da aba correspondente da planilha de Objetos de Conhecimento se houver URL conectada
   useEffect(() => {
-    obterAulasCurriculo(anoAtivo, bimestreAtivo).then((aulas) => {
-      setAulasCurriculo(aulas);
-    });
+    const urlCurriculo = localStorage.getItem(STORAGE_CURRICULO_URL_KEY) || "";
+    if (urlCurriculo) {
+      obterAulasCurriculo(anoAtivo, bimestreAtivo, urlCurriculo).then((aulas) => {
+        setAulasCurriculo(aulas);
+      });
+    } else {
+      setAulasCurriculo([]);
+    }
   }, [anoAtivo, bimestreAtivo]);
 
   // Semanas calculadas
