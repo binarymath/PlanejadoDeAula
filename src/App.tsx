@@ -15,6 +15,8 @@ import {
   Library,
   Save,
   RotateCcw,
+  Menu,
+  X,
 } from "lucide-react";
 
 
@@ -66,6 +68,7 @@ export const App: React.FC = () => {
   });
 
   const [activeTab, setActiveTab] = useState<string>("identificacao");
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [showPreviewModal, setShowPreviewModal] = useState<boolean>(false);
   const [savedFeedback, setSavedFeedback] = useState<boolean>(false);
@@ -181,90 +184,166 @@ export const App: React.FC = () => {
       </header>
 
 
-      {/* Conteúdo Principal com Abas */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+      {/* Layout Principal com Sidebar e Área de Conteúdo */}
+      <div className="flex-1 flex flex-col md:flex-row w-full max-w-[1600px] mx-auto">
+        {/* Backdrop escuro para mobile */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-slate-900/50 z-40 md:hidden backdrop-blur-xs transition-opacity"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
 
-        {/* Abas de Navegação */}
-        <div className="bg-white rounded-t-xl border border-b-0 border-slate-200 p-2 overflow-x-auto flex gap-1 scrollbar-none">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                  isActive
-                    ? "bg-sky-600 text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                }`}
-              >
-                <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-slate-400"}`} />
-                <span>{tab.title}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Sidebar Responsiva do Lado Esquerdo */}
+        <aside
+          className={`fixed md:sticky top-0 md:top-16 z-50 md:z-20 h-full md:h-[calc(100vh-4rem)] w-72 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          } shadow-xl md:shadow-none`}
+        >
+          {/* Cabeçalho do Sidebar (apenas no mobile para botão de fechar) */}
+          <div className="flex items-center justify-between p-4 border-b border-slate-100 md:hidden">
+            <span className="font-bold text-sm text-slate-800">Menu das Seções</span>
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(false)}
+              className="p-1 text-slate-400 hover:text-slate-600 rounded-md"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-        {/* Renderização do Módulo Ativo */}
-        <div className="rounded-b-xl">
-          {activeTab === "identificacao" && (
-            <IdentificationModule data={data} onChange={handleFieldChange} />
-          )}
-          {activeTab === "diagnostico" && (
-            <DiagnosticModule data={data} onChange={handleFieldChange} />
-          )}
-          {activeTab === "conteudos" && (
-            <ThematicUnitModule data={data} onChange={handleFieldChange} />
-          )}
-          {activeTab === "socioemocional" && (
-            <SocioemotionalModule data={data} onChange={handleFieldChange} />
-          )}
-          {activeTab === "cronograma" && (
-            <ScheduleModule data={data} onChange={handleFieldChange} />
-          )}
-          {activeTab === "metodologia" && (
-            <MethodologyModule data={data} onChange={handleFieldChange} />
-          )}
-          {activeTab === "avaliacao" && (
-            <EvaluationModule data={data} onChange={handleFieldChange} />
-          )}
-          {activeTab === "referencias" && (
-            <ReferencesModule data={data} onChange={handleFieldChange} />
-          )}
-        </div>
+          <div className="p-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider hidden md:block">
+            Navegação do Plano
+          </div>
 
-        {/* Barra Inferior de Navegação Rápida entre Abas */}
-        <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
-          <button
-            type="button"
-            disabled={activeTab === tabs[0].id}
-            onClick={() => {
-              const idx = tabs.findIndex((t) => t.id === activeTab);
-              if (idx > 0) setActiveTab(tabs[idx - 1].id);
-            }}
-            className="px-3 py-1.5 bg-white border border-slate-200 rounded hover:bg-slate-50 disabled:opacity-40 font-medium"
-          >
-            ← Aba Anterior
-          </button>
+          {/* Lista de Seções com Numeração */}
+          <nav className="flex-1 overflow-y-auto p-2 space-y-1">
+            {tabs.map((tab, idx) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-semibold transition-all text-left group ${
+                    isActive
+                      ? "bg-sky-600 text-white shadow-sm shadow-sky-600/20"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  }`}
+                >
+                  <div
+                    className={`p-1.5 rounded-lg flex items-center justify-center transition-colors ${
+                      isActive
+                        ? "bg-sky-500/30 text-white"
+                        : "bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-700"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="block truncate leading-snug">{tab.title}</span>
+                  </div>
+                  <span
+                    className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                      isActive ? "bg-sky-700 text-sky-100" : "bg-slate-100 text-slate-400"
+                    }`}
+                  >
+                    {idx + 1}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
 
-          <span className="font-medium text-slate-400">
-            Aba {tabs.findIndex((t) => t.id === activeTab) + 1} de {tabs.length}
-          </span>
+          {/* Rodapé do Sidebar */}
+          <div className="p-3 border-t border-slate-100 bg-slate-50/60 text-[11px] text-slate-500 flex items-center justify-between">
+            <span>Progresso</span>
+            <span className="font-semibold text-sky-600">
+              {tabs.findIndex((t) => t.id === activeTab) + 1} de {tabs.length} seções
+            </span>
+          </div>
+        </aside>
 
-          <button
-            type="button"
-            disabled={activeTab === tabs[tabs.length - 1].id}
-            onClick={() => {
-              const idx = tabs.findIndex((t) => t.id === activeTab);
-              if (idx < tabs.length - 1) setActiveTab(tabs[idx + 1].id);
-            }}
-            className="px-3 py-1.5 bg-white border border-slate-200 rounded hover:bg-slate-50 disabled:opacity-40 font-medium"
-          >
-            Próxima Aba →
-          </button>
-        </div>
-      </main>
+        {/* Conteúdo Principal do Módulo */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 min-w-0 overflow-y-auto">
+          {/* Barra Mobile para Abrir Sidebar e Ver Seção Atual */}
+          <div className="md:hidden flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 mb-4 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="inline-flex items-center gap-2 text-xs font-bold text-sky-700 bg-sky-50 px-3 py-1.5 rounded-lg border border-sky-200"
+            >
+              <Menu className="w-4 h-4" />
+              <span>Ver Seções</span>
+            </button>
+            <span className="text-xs font-semibold text-slate-600 truncate max-w-[200px]">
+              {tabs.find((t) => t.id === activeTab)?.title}
+            </span>
+          </div>
+
+          {/* Renderização do Módulo Ativo */}
+          <div>
+            {activeTab === "identificacao" && (
+              <IdentificationModule data={data} onChange={handleFieldChange} />
+            )}
+            {activeTab === "diagnostico" && (
+              <DiagnosticModule data={data} onChange={handleFieldChange} />
+            )}
+            {activeTab === "conteudos" && (
+              <ThematicUnitModule data={data} onChange={handleFieldChange} />
+            )}
+            {activeTab === "socioemocional" && (
+              <SocioemotionalModule data={data} onChange={handleFieldChange} />
+            )}
+            {activeTab === "cronograma" && (
+              <ScheduleModule data={data} onChange={handleFieldChange} />
+            )}
+            {activeTab === "metodologia" && (
+              <MethodologyModule data={data} onChange={handleFieldChange} />
+            )}
+            {activeTab === "avaliacao" && (
+              <EvaluationModule data={data} onChange={handleFieldChange} />
+            )}
+            {activeTab === "referencias" && (
+              <ReferencesModule data={data} onChange={handleFieldChange} />
+            )}
+          </div>
+
+          {/* Barra Inferior de Navegação Rápida entre Abas */}
+          <div className="mt-6 flex items-center justify-between text-xs text-slate-500 bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
+            <button
+              type="button"
+              disabled={activeTab === tabs[0].id}
+              onClick={() => {
+                const idx = tabs.findIndex((t) => t.id === activeTab);
+                if (idx > 0) setActiveTab(tabs[idx - 1].id);
+              }}
+              className="px-3 py-1.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 disabled:opacity-40 font-semibold rounded-lg text-slate-700 transition-colors"
+            >
+              ← Seção Anterior
+            </button>
+
+            <span className="font-semibold text-slate-500">
+              {tabs.findIndex((t) => t.id === activeTab) + 1} de {tabs.length}
+            </span>
+
+            <button
+              type="button"
+              disabled={activeTab === tabs[tabs.length - 1].id}
+              onClick={() => {
+                const idx = tabs.findIndex((t) => t.id === activeTab);
+                if (idx < tabs.length - 1) setActiveTab(tabs[idx + 1].id);
+              }}
+              className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white disabled:bg-slate-300 font-semibold rounded-lg transition-colors shadow-2xs"
+            >
+              Próxima Seção →
+            </button>
+          </div>
+        </main>
+      </div>
       </div>
 
       {/* Modal de Pré-visualização Fiel ao DOCX */}
