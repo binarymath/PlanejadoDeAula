@@ -1,24 +1,22 @@
 import { LessonPlanState, initialLessonPlanState } from "../types/lessonPlan";
 
-export interface PlanilhasLinks {
-  recuperacaoDiagnostica: string;
-  socioemocionais: string;
-  metodologias: string;
-  avaliacao: string;
-  referencias: string;
+export interface PlanilhasLinksConfig {
+  recuperacaoDiagnostica?: string;
+  socioemocionais?: string;
+  metodologias?: string;
+  avaliacao?: string;
+  referencias?: string;
+  disciplinas?: Record<string, string>;
 }
 
 /**
- * Estrutura reconstruída do arquivo .JSON de backup e configuração
- * Contém links de planilhas, disciplinas e dados completos de planejamento
- * EXCLUI estritamente a chave do Gemini por motivos de privacidade/segurança
+ * Estrutura Unificada e Sem Redundâncias (Opção A)
+ * - 'planilhas': reúne todos os links gerais e a relação de disciplinas/conteúdos.
+ * - 'planejamento': dados pedagógicos e cadastrais do plano de aula atual.
+ * - A chave de API do Gemini NUNCA é incluída por motivos de segurança e privacidade.
  */
 export interface BackupCompletoPlanejadorJSON {
-  sistema: string;
-  versao: string;
-  dataBackup: string;
-  planilhas: PlanilhasLinks;
-  disciplinas: Record<string, string>;
+  planilhas: PlanilhasLinksConfig;
   planejamento: LessonPlanState;
 }
 
@@ -36,7 +34,7 @@ export const STORAGE_KEYS = {
 /**
  * Lê a configuração JSON salva
  */
-export function obterConfiguracaoLinks(): BackupCompletoPlanejadorJSON | any {
+export function obterConfiguracaoLinks(): BackupCompletoPlanejadorJSON | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.CONFIG_JSON);
     if (!raw) return null;
@@ -48,12 +46,13 @@ export function obterConfiguracaoLinks(): BackupCompletoPlanejadorJSON | any {
 }
 
 /**
- * Lista os nomes das disciplinas cadastradas no JSON
+ * Retorna os nomes das disciplinas cadastradas em 'planilhas.disciplinas'
  */
 export function obterDisciplinasCadastradas(): string[] {
   const config = obterConfiguracaoLinks();
-  if (!config || !config.disciplinas) return [];
-  return Object.keys(config.disciplinas).filter((d) => d.trim().length > 0);
+  const disciplinasObj = config?.planilhas?.disciplinas || (config as any)?.disciplinas;
+  if (!disciplinasObj) return [];
+  return Object.keys(disciplinasObj).filter((d) => d.trim().length > 0);
 }
 
 /**
@@ -61,9 +60,10 @@ export function obterDisciplinasCadastradas(): string[] {
  */
 export function aplicarDisciplinaSelecionada(nomeDisciplina: string): string | null {
   const config = obterConfiguracaoLinks();
-  if (!config || !config.disciplinas) return null;
+  const disciplinasObj = config?.planilhas?.disciplinas || (config as any)?.disciplinas;
+  if (!disciplinasObj) return null;
 
-  const url = config.disciplinas[nomeDisciplina];
+  const url = disciplinasObj[nomeDisciplina];
   if (url && url.trim()) {
     localStorage.setItem(STORAGE_KEYS.CURRICULO, url.trim());
     window.dispatchEvent(new Event("storage_links_updated"));
@@ -73,36 +73,34 @@ export function aplicarDisciplinaSelecionada(nomeDisciplina: string): string | n
 }
 
 /**
- * Gera o backup completo em JSON do estado atual do sistema
- * (Links + Disciplinas + Todos os dados pedagógicos preenchidos)
- * SEM a chave de API do Gemini.
+ * Gera o backup no padrão Opção A (sem redundâncias)
  */
 export function gerarBackupCompleto(dadosAtuais: LessonPlanState): BackupCompletoPlanejadorJSON {
   const configSalva = obterConfiguracaoLinks();
-
   const discNome = dadosAtuais.componenteCurricular?.trim() || "Matemática";
-  const disciplinasObj: Record<string, string> = configSalva?.disciplinas || {
-    [discNome]: localStorage.getItem(STORAGE_KEYS.CURRICULO) || "",
-  };
+
+  const disciplinasSalvas =
+    configSalva?.planilhas?.disciplinas ||
+    (configSalva as any)?.disciplinas ||
+    {
+      [discNome]: localStorage.getItem(STORAGE_KEYS.CURRICULO) || "",
+    };
 
   return {
-    sistema: "Planejador de Aula • SEDUC-SP",
-    versao: "2.0",
-    dataBackup: new Date().toISOString(),
     planilhas: {
       recuperacaoDiagnostica: localStorage.getItem(STORAGE_KEYS.DIAGNOSTICO) || "",
       socioemocionais: localStorage.getItem(STORAGE_KEYS.SOCIOEMOCIONAL) || "",
       metodologias: localStorage.getItem(STORAGE_KEYS.METODOLOGIAS) || "",
       avaliacao: localStorage.getItem(STORAGE_KEYS.AVALIACAO) || "",
       referencias: localStorage.getItem(STORAGE_KEYS.REFERENCIAS) || "",
+      disciplinas: disciplinasSalvas,
     },
-    disciplinas: disciplinasObj,
     planejamento: dadosAtuais,
   };
 }
 
 /**
- * Salva e restaura o backup completo no sistema
+ * Salva e restaura o backup no sistema
  */
 export function restaurarBackupCompleto(
   backup: any,
@@ -135,17 +133,18 @@ export function restaurarBackupCompleto(
     }
   }
 
-  // 3. Disciplinas e currículo
+  // 3. Disciplinas e planilha de currículo
+  const disciplinasObj = planilhas?.disciplinas || backup.disciplinas;
   let disciplinaAtiva = "";
   if (backup.planejamento && backup.planejamento.componenteCurricular) {
     disciplinaAtiva = backup.planejamento.componenteCurricular;
   }
 
-  if (backup.disciplinas) {
-    const listaDiscs = Object.keys(backup.disciplinas);
-    const alvo = disciplinaAtiva && backup.disciplinas[disciplinaAtiva] ? disciplinaAtiva : listaDiscs[0];
-    if (alvo && backup.disciplinas[alvo]) {
-      localStorage.setItem(STORAGE_KEYS.CURRICULO, backup.disciplinas[alvo].trim());
+  if (disciplinasObj) {
+    const listaDiscs = Object.keys(disciplinasObj);
+    const alvo = disciplinaAtiva && disciplinasObj[disciplinaAtiva] ? disciplinaAtiva : listaDiscs[0];
+    if (alvo && disciplinasObj[alvo]) {
+      localStorage.setItem(STORAGE_KEYS.CURRICULO, disciplinasObj[alvo].trim());
     }
   }
 
