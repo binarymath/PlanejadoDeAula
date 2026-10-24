@@ -395,7 +395,7 @@ export const MethodologyModule: React.FC<MethodologyModuleProps> = ({
       {/* Caixa de Texto que migra para o DOCX */}
       <div>
         <label className="block text-xs font-semibold text-slate-600 uppercase mb-2">
-          Texto de Metodologias Ativas (Será exportado no DOCX):
+          Texto de Metodologias Ativas:
         </label>
         <textarea
           rows={8}

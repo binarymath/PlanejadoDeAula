@@ -353,7 +353,7 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
       {/* Caixa de Texto que migra para o DOCX */}
       <div>
         <label className="block text-xs font-semibold text-slate-600 uppercase mb-2">
-          Unidades Temáticas e Objetos de Conhecimento (Será exportado no DOCX):
+          Unidades Temáticas e Objetos de Conhecimento:
         </label>
         <textarea
           rows={9}

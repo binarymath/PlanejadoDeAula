@@ -546,7 +546,7 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
       {/* Caixa de Texto que migra para o DOCX */}
       <div>
         <label className="block text-xs font-semibold text-slate-600 uppercase mb-2">
-          Texto de Aprendizagens Não Consolidadas (Será exportado no DOCX):
+          Texto de Aprendizagens Não Consolidadas:
         </label>
         <textarea
           rows={8}

@@ -279,7 +279,7 @@ export const SocioemotionalModule: React.FC<SocioemotionalModuleProps> = ({
       {/* Caixa de Texto que migra para o DOCX */}
       <div>
         <label className="block text-xs font-semibold text-slate-600 uppercase mb-2">
-          Competências Socioemocionais (Será exportado no DOCX):
+          Competências Socioemocionais:
         </label>
         <textarea
           rows={6}

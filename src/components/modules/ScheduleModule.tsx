@@ -99,7 +99,7 @@ export const ScheduleModule: React.FC<ScheduleModuleProps> = ({
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="block text-xs font-semibold text-slate-600 uppercase">
-            Detalhamento do Cronograma (Será exportado no DOCX):
+            Detalhamento do Cronograma:
           </label>
 
           <span className="text-[11px] text-slate-400">
