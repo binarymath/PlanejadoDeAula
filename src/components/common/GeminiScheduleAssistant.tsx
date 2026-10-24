@@ -10,6 +10,11 @@ import {
   HelpCircle,
   Columns,
   Calendar,
+  Lock,
+  Check,
+  CalendarDays,
+  ShieldCheck,
+  Trash2,
 } from "lucide-react";
 import {
   ColunaCurriculoOpcao,
@@ -42,16 +47,29 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
 }) => {
   const [apiKey, setApiKey] = useState<string>(obterGeminiApiKey());
   const [mostrarConfigKey, setMostrarConfigKey] = useState<boolean>(!obterGeminiApiKey());
+  const [inputKey, setInputKey] = useState<string>(obterGeminiApiKey());
   const [mensagens, setMensagens] = useState<ChatMensagem[]>([]);
   const [inputTexto, setInputTexto] = useState<string>("");
   const [carregando, setCarregando] = useState<boolean>(false);
   const [ultimoCronogramaGerado, setUltimoCronogramaGerado] = useState<string | null>(null);
+  const [copiadoSucesso, setCopiadoSucesso] = useState<boolean>(false);
 
   // Salvar chave de API
-  const handleSalvarKey = (e: React.FormEvent) => {
-    e.preventDefault();
-    salvarGeminiApiKey(apiKey);
-    setMostrarConfigKey(false);
+  const handleSalvarKey = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const chaveLimpa = inputKey.trim();
+    salvarGeminiApiKey(chaveLimpa);
+    setApiKey(chaveLimpa);
+    if (chaveLimpa) {
+      setMostrarConfigKey(false);
+    }
+  };
+
+  const handleRemoverKey = () => {
+    salvarGeminiApiKey("");
+    setApiKey("");
+    setInputKey("");
+    setMostrarConfigKey(true);
   };
 
   // Enviar mensagem para o Gemini
@@ -130,58 +148,108 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
     <div className="bg-gradient-to-br from-sky-50/60 to-indigo-50/40 border border-sky-200/80 rounded-xl p-5 space-y-4">
       {/* Barra de Título e Configuração de Chave */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-sky-100 pb-3">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-sky-600 text-white rounded-lg shadow-2xs">
-            <Sparkles className="w-4 h-4" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 text-white flex items-center justify-center shadow-sm shadow-sky-600/30">
+            <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-800">
-              Assistente Gemini • Cronograma Inteligente
+            <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
+              Assistente de IA • Planejamento do Cronograma
             </h3>
-            <p className="text-[11px] text-slate-500">
-              Associa a planilha de Objetos de Conhecimento com feriados e semanas letivas
+            <p className="text-xs text-slate-500">
+              Distribuição inteligente de conteúdos respeitando seus feriados e semanas letivas
             </p>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setMostrarConfigKey(!mostrarConfigKey)}
-          className="inline-flex items-center gap-1 text-xs text-sky-700 hover:text-sky-900 bg-white border border-sky-200 px-2.5 py-1 rounded-md font-medium transition-colors"
-        >
-          <Key className="w-3.5 h-3.5" />
-          <span>{apiKey ? "Chave de API Configurada" : "Inserir Chave Gemini"}</span>
-        </button>
+        {/* Status e Botão da Chave */}
+        <div className="flex items-center gap-2">
+          {apiKey ? (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-semibold shadow-2xs">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>IA Pronta para uso</span>
+              <button
+                type="button"
+                onClick={() => setMostrarConfigKey(!mostrarConfigKey)}
+                className="text-[11px] underline text-emerald-700 hover:text-emerald-900 ml-1"
+                title="Configurações da Chave"
+              >
+                {mostrarConfigKey ? "Fechar" : "Alterar"}
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setMostrarConfigKey(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all"
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span>Ativar IA (Inserir Chave)</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Formulário de Chave de API */}
+      {/* Área Intuitiva de Configuração da Chave da API */}
       {mostrarConfigKey && (
-        <form onSubmit={handleSalvarKey} className="bg-white p-3.5 rounded-lg border border-sky-200 space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-slate-700">
-              Chave da API do Google Gemini (gratuita no Google AI Studio):
-            </label>
-          </div>
+        <div className="p-4 sm:p-5 bg-sky-50/70 border-b border-sky-200/80 rounded-xl animate-in fade-in duration-200">
+          <div className="max-w-2xl bg-white p-4 rounded-xl border border-sky-200 shadow-2xs space-y-3">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wide">
+                  <Lock className="w-3.5 h-3.5 text-sky-600" />
+                  Chave da API do Google Gemini
+                </h4>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  A chave é gratuita e gerada pelo Google AI Studio. Fica salva com total segurança apenas no seu navegador.
+                </p>
+              </div>
+              {apiKey && (
+                <button
+                  type="button"
+                  onClick={() => setMostrarConfigKey(false)}
+                  className="text-xs text-slate-400 hover:text-slate-600 font-medium"
+                >
+                  Fechar
+                </button>
+              )}
+            </div>
 
-          <div className="flex gap-2">
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Cole sua chave AIzaSy... aqui"
-              className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-sky-500 focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded transition-colors"
-            >
-              Salvar
-            </button>
+            <form onSubmit={handleSalvarKey} className="space-y-2">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="password"
+                  value={inputKey}
+                  onChange={(e) => setInputKey(e.target.value)}
+                  placeholder="Cole sua chave aqui (começa com AIzaSy...)"
+                  className="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                />
+                <button
+                  type="submit"
+                  disabled={!inputKey.trim()}
+                  className="px-4 py-2 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-colors whitespace-nowrap shadow-2xs"
+                >
+                  Salvar Chave
+                </button>
+
+                {apiKey && (
+                  <button
+                    type="button"
+                    onClick={handleRemoverKey}
+                    title="Remover chave salva"
+                    className="p-2 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors flex items-center justify-center"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </form>
+
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+              <span>Como obter: acesse o Google AI Studio com sua conta Google e clique em "Create API Key".</span>
+            </div>
           </div>
-          <p className="text-[10px] text-slate-400">
-            A chave é armazenada com segurança localmente no seu navegador e não é compartilhada.
-          </p>
-        </form>
+        </div>
       )}
 
       {/* Seletor da Coluna da Planilha de Objetos de Conhecimento - Exibido apenas após conexão */}
@@ -245,10 +313,13 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
         </div>
       )}
 
-      {/* Caixa de Diálogo / Chat Interativo */}
-      <div className="bg-white rounded-lg border border-sky-200 overflow-hidden flex flex-col">
-        <div className="px-3.5 py-2 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 flex items-center justify-between">
-          <span>Diálogo Pedagógico com Gemini</span>
+      {/* Diálogo Pedagógico com Gemini */}
+      <div className="bg-white rounded-xl border border-sky-200 overflow-hidden shadow-2xs flex flex-col">
+        <div className="px-4 py-3 bg-slate-50/80 border-b border-slate-200 text-xs font-bold text-slate-700 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bot className="w-4 h-4 text-sky-600" />
+            <span>Conversa Pedagógica com o Gemini</span>
+          </div>
           {mensagens.length > 0 && (
             <button
               type="button"
@@ -256,7 +327,7 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
                 setMensagens([]);
                 setUltimoCronogramaGerado(null);
               }}
-              className="text-[11px] text-slate-400 hover:text-slate-600"
+              className="text-[11px] text-slate-400 hover:text-slate-600 font-semibold"
             >
               Limpar conversa
             </button>
@@ -264,26 +335,35 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
         </div>
 
         {/* Mensagens do Chat */}
-        <div className="p-3.5 max-h-72 overflow-y-auto space-y-3">
+        <div className="p-4 max-h-96 overflow-y-auto space-y-3.5 bg-slate-50/30">
           {mensagens.length === 0 ? (
-            <div className="text-center py-6 text-slate-400 text-xs space-y-2">
-              <Bot className="w-7 h-7 mx-auto text-sky-400" />
-              <p>
-                Clique em <strong>"Sugerir Cronograma Completo"</strong> ou digite uma instrução abaixo.
-              </p>
-              <div className="flex flex-wrap justify-center gap-1.5 pt-1">
+            <div className="text-center py-8 text-slate-500 text-xs space-y-3">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-sky-100/70 text-sky-600 flex items-center justify-center">
+                <Bot className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="font-bold text-slate-800 text-sm">
+                  Como posso ajudar a organizar suas semanas de aula?
+                </p>
+                <p className="text-slate-400 text-xs mt-0.5">
+                  Peça sugestões de distribuição, adaptações para semanas curtas ou clique em um dos exemplos rápidos:
+                </p>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-2 pt-2 max-w-lg mx-auto">
                 {[
-                  "Distribua 2 aulas para cada tema",
-                  "Reserve a semana do Carnaval para nivelamento",
-                  "Adicione prova bimestral na última semana",
+                  "Distribua os temas organizando 2 aulas por semana",
+                  "Reserve momentos de nivelamento antes dos feriados",
+                  "Inclua uma aula para avaliação bimestral no final",
                 ].map((sug, i) => (
                   <button
                     key={i}
                     type="button"
+                    disabled={!apiKey || carregando}
                     onClick={() => handleEnviarMensagem(sug)}
-                    className="text-[10px] bg-slate-100 hover:bg-sky-50 text-slate-600 px-2 py-1 rounded border border-slate-200 transition-colors"
+                    className="text-xs bg-white hover:bg-sky-50 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-sky-300 transition-colors shadow-2xs text-left"
                   >
-                    "{sug}"
+                    💡 {sug}
                   </button>
                 ))}
               </div>
@@ -300,85 +380,106 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
                   </div>
                 )}
 
-                <div
-                  className={`max-w-[85%] rounded-lg p-3 text-xs leading-relaxed space-y-2 ${
-                    msg.role === "user"
-                      ? "bg-sky-600 text-white rounded-br-none"
-                      : "bg-slate-50 border border-slate-200 text-slate-800 rounded-bl-none"
-                  }`}
-                >
-                  <p className="whitespace-pre-line">{msg.texto}</p>
-
-                  {/* Bloco de cronograma gerado */}
-                  {msg.cronogramaGerado && (
-                    <div className="bg-white border border-sky-200 rounded p-2.5 mt-2 space-y-2 text-slate-900">
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-1">
-                        <span className="font-bold text-[11px] text-sky-900 flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5" />
-                          Proposta de Cronograma Formatado
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => onAplicarCronograma(msg.cronogramaGerado!)}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold transition-colors shadow-2xs"
-                        >
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>Aplicar ao Cronograma</span>
-                        </button>
-                      </div>
-                      <pre className="font-mono text-[10px] whitespace-pre-wrap max-h-40 overflow-y-auto text-slate-700">
-                        {msg.cronogramaGerado}
-                      </pre>
-                    </div>
-                  )}
-
-                  <span
-                    className={`block text-[9px] ${
-                      msg.role === "user" ? "text-sky-200 text-right" : "text-slate-400"
+                  <div
+                    className={`max-w-[88%] rounded-2xl p-4 text-xs leading-relaxed space-y-2.5 shadow-2xs ${
+                      msg.role === "user"
+                        ? "bg-sky-600 text-white rounded-br-xs font-medium"
+                        : "bg-white border border-slate-200 text-slate-800 rounded-bl-xs"
                     }`}
                   >
-                    {msg.dataHora}
-                  </span>
-                </div>
+                    <p className="whitespace-pre-line leading-relaxed">{msg.texto}</p>
 
-                {msg.role === "user" && (
-                  <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center flex-shrink-0 text-xs font-bold">
-                    <User className="w-3.5 h-3.5" />
+                    {/* Card de Visualização do Cronograma Formatado */}
+                    {msg.cronogramaGerado && (
+                      <div className="bg-gradient-to-br from-slate-50 to-sky-50/50 border border-sky-200 rounded-xl p-3.5 mt-2 space-y-2.5 text-slate-900">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-100 pb-2">
+                          <span className="font-bold text-xs text-sky-900 flex items-center gap-1.5">
+                            <CalendarDays className="w-4 h-4 text-sky-600" />
+                            Cronograma Organizado por Mês e Datas
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onAplicarCronograma(msg.cronogramaGerado!);
+                              setCopiadoSucesso(true);
+                              setTimeout(() => setCopiadoSucesso(false), 3000);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-2xs"
+                          >
+                            {copiadoSucesso ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                <span>Aplicado com Sucesso!</span>
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Aplicar ao Cronograma Abaixo</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        <div className="bg-white rounded-lg p-3 border border-slate-200 max-h-56 overflow-y-auto">
+                          <pre className="font-mono text-[11px] whitespace-pre-wrap text-slate-800 leading-relaxed font-normal">
+                            {msg.cronogramaGerado}
+                          </pre>
+                        </div>
+                      </div>
+                    )}
+
+                    <span
+                      className={`block text-[10px] ${
+                        msg.role === "user" ? "text-sky-200 text-right" : "text-slate-400"
+                      }`}
+                    >
+                      {msg.dataHora}
+                    </span>
                   </div>
-                )}
+
+                  {msg.role === "user" && (
+                    <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center flex-shrink-0 text-xs font-bold shadow-2xs">
+                      <User className="w-4 h-4" />
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+
+            {carregando && (
+              <div className="flex items-center gap-2.5 text-xs text-sky-700 bg-sky-50 p-3 rounded-xl border border-sky-200 max-w-md">
+                <RefreshCw className="w-4 h-4 animate-spin text-sky-600" />
+                <span>O Gemini está analisando os dados e organizando o cronograma nas semanas...</span>
               </div>
-            ))
-          )}
+            )}
+          </div>
 
-          {carregando && (
-            <div className="flex items-center gap-2 text-xs text-sky-600 p-2">
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              <span>O Gemini está analisando os dados e organizando o cronograma...</span>
-            </div>
-          )}
-        </div>
-
-        {/* Input de Mensagem */}
-        <div className="p-2 border-t border-slate-200 bg-slate-50/70 flex gap-2">
-          <input
-            type="text"
-            value={inputTexto}
-            disabled={carregando}
-            onChange={(e) => setInputTexto(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleEnviarMensagem()}
-            placeholder="Ex: Gemini, agrupe 2 aulas em cada semana e deixe o Carnaval para recuperação..."
-            className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-300 rounded focus:ring-1 focus:ring-sky-500 focus:outline-none"
-          />
-          <button
-            type="button"
-            disabled={carregando || !inputTexto.trim()}
-            onClick={() => handleEnviarMensagem()}
-            className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 disabled:opacity-40 text-white rounded text-xs font-semibold transition-colors flex items-center gap-1"
-          >
-            <Send className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Enviar</span>
-          </button>
-        </div>
+          {/* Input de Mensagem */}
+          <div className="p-3 border-t border-slate-200 bg-white flex gap-2">
+            <input
+              type="text"
+              value={inputTexto}
+              disabled={carregando || !apiKey}
+              onChange={(e) => setInputTexto(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleEnviarMensagem()}
+              placeholder={
+                apiKey
+                  ? "Digite uma instrução para o Gemini (ex: adapte a semana do Carnaval para acolhimento)..."
+                  : "Insira sua chave de API acima para conversar com o Gemini..."
+              }
+              className="flex-1 px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all"
+            />
+            <button
+              type="button"
+              disabled={carregando || !inputTexto.trim() || !apiKey}
+              onClick={() => handleEnviarMensagem()}
+              className="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Enviar</span>
+            </button>
+          </div>
       </div>
     </div>
   );
