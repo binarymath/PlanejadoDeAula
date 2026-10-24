@@ -15,6 +15,7 @@ import {
   CalendarDays,
   ShieldCheck,
   Trash2,
+  ExternalLink,
 } from "lucide-react";
 import {
   ColunaCurriculoOpcao,
@@ -53,6 +54,7 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
   const [carregando, setCarregando] = useState<boolean>(false);
   const [ultimoCronogramaGerado, setUltimoCronogramaGerado] = useState<string | null>(null);
   const [copiadoSucesso, setCopiadoSucesso] = useState<boolean>(false);
+  const [salvoComSucesso, setSalvoComSucesso] = useState<boolean>(false);
 
   // Salvar chave de API
   const handleSalvarKey = (e?: React.FormEvent) => {
@@ -61,7 +63,11 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
     salvarGeminiApiKey(chaveLimpa);
     setApiKey(chaveLimpa);
     if (chaveLimpa) {
-      setMostrarConfigKey(false);
+      setSalvoComSucesso(true);
+      setTimeout(() => {
+        setSalvoComSucesso(false);
+        setMostrarConfigKey(false);
+      }, 1500);
     }
   };
 
@@ -166,12 +172,14 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
         <div className="flex items-center gap-2">
           {apiKey ? (
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-semibold shadow-2xs">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>IA Pronta para uso</span>
+              <Check className="w-4 h-4 stroke-[3] text-emerald-600" />
+              <span>Sincronizado ✔</span>
+              <span className="text-slate-300">|</span>
+              <span className="text-emerald-700 font-normal">IA Pronta</span>
               <button
                 type="button"
                 onClick={() => setMostrarConfigKey(!mostrarConfigKey)}
-                className="text-[11px] underline text-emerald-700 hover:text-emerald-900 ml-1"
+                className="text-[11px] underline text-emerald-700 hover:text-emerald-900 ml-1 font-semibold"
                 title="Configurações da Chave"
               >
                 {mostrarConfigKey ? "Fechar" : "Alterar"}
@@ -217,19 +225,44 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
 
             <form onSubmit={handleSalvarKey} className="space-y-2">
               <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="password"
-                  value={inputKey}
-                  onChange={(e) => setInputKey(e.target.value)}
-                  placeholder="Cole sua chave aqui (começa com AIzaSy...)"
-                  className="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
-                />
+                <div className="relative flex-1">
+                  <input
+                    type="password"
+                    value={inputKey}
+                    onChange={(e) => {
+                      setInputKey(e.target.value);
+                      if (salvoComSucesso) setSalvoComSucesso(false);
+                    }}
+                    placeholder="Cole sua chave aqui (começa com AIzaSy...)"
+                    className="w-full px-3 py-2 pr-9 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  />
+                  {apiKey && apiKey === inputKey.trim() && (
+                    <span
+                      title="Chave sincronizada e ativa"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center text-emerald-600 font-bold"
+                    >
+                      <Check className="w-4 h-4 stroke-[3]" />
+                    </span>
+                  )}
+                </div>
+
                 <button
                   type="submit"
                   disabled={!inputKey.trim()}
-                  className="px-4 py-2 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-colors whitespace-nowrap shadow-2xs"
+                  className={`px-4 py-2 text-white rounded-lg text-xs font-bold transition-all whitespace-nowrap shadow-2xs flex items-center justify-center gap-1.5 ${
+                    salvoComSucesso
+                      ? "bg-emerald-600 hover:bg-emerald-700"
+                      : "bg-sky-600 hover:bg-sky-700 disabled:opacity-50"
+                  }`}
                 >
-                  Salvar Chave
+                  {salvoComSucesso ? (
+                    <>
+                      <Check className="w-4 h-4 stroke-[3]" />
+                      <span>Sincronizado ✔</span>
+                    </>
+                  ) : (
+                    <span>Salvar Chave</span>
+                  )}
                 </button>
 
                 {apiKey && (
@@ -245,8 +278,27 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
               </div>
             </form>
 
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-              <span>Como obter: acesse o Google AI Studio com sua conta Google e clique em "Create API Key".</span>
+            <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-1.5 text-slate-600">
+                <span>Onde obter a chave:</span>
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-semibold text-sky-600 hover:text-sky-800 hover:underline"
+                >
+                  <span>Google AI Studio</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                <span className="text-slate-400 text-[11px]">(Clique em "Create API Key")</span>
+              </div>
+
+              {apiKey && (
+                <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  <Check className="w-3.5 h-3.5 stroke-[3] text-emerald-600" />
+                  <span>Sincronizado ✔</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
