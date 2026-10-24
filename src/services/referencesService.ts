@@ -16,8 +16,8 @@ export const REFERENCIAS_PADRAO: ReferenciaItem[] = [
     titulo: "Repositório Institucional da Educação SP",
     categoria: "Repositório Digital & Materiais",
     orgao: "Secretaria da Educação do Estado de São Paulo (SEDUC-SP)",
-    linkTexto: "Acessar Repositório",
-    url: "https://repositorio.educacao.sp.gov.br/",
+    linkTexto: "Repositório Digital",
+    url: "",
     descricao: "Acervo de materiais pedagógicos, sequências didáticas e cadernos oficiais."
   },
   {
@@ -25,8 +25,8 @@ export const REFERENCIAS_PADRAO: ReferenciaItem[] = [
     titulo: "Base Nacional Comum Curricular (BNCC)",
     categoria: "Diretriz Curricular Nacional",
     orgao: "Ministério da Educação (MEC)",
-    linkTexto: "Download da BNCC",
-    url: "http://download.basenacionalcomum.mec.gov.br/",
+    linkTexto: "Documento da BNCC",
+    url: "",
     descricao: "Documento normativo que define as aprendizagens essenciais para a Educação Básica."
   },
   {
@@ -34,25 +34,31 @@ export const REFERENCIAS_PADRAO: ReferenciaItem[] = [
     titulo: "Acervo Digital Ementa Escopo-sequência 2026",
     categoria: "Ementa & Planejamento Pedagógico",
     orgao: "Centro de Mídias SP (CMSP) / SEDUC-SP",
-    linkTexto: "Acessar Acervo CMSP",
-    url: "https://repositorio.educacao.sp.gov.br/Inicio/MidiasCMSP",
-    descricao: "Alinhamento de escopo, sequências de atividades e videoaulas do Centro de Mídias."
+    linkTexto: "Acervo de Materiais",
+    url: "",
+    descricao: "Alinhamento de escopo, sequências de atividades e videoaulas."
   },
   {
     item: "4",
     titulo: "Currículo Paulista",
     categoria: "Currículo Estadual & Apoio Pedagógico",
     orgao: "Secretaria da Educação do Estado de São Paulo (SEDUC-SP)",
-    linkTexto: "Acessar Currículo Paulista",
-    url: "https://efape.educacao.sp.gov.br/curriculopaulista/",
+    linkTexto: "Currículo Paulista",
+    url: "",
     descricao: "Diretrizes curriculares e habilidades orientadoras do estado de São Paulo."
   }
 ];
 
 export async function fetchReferenciasPlanilha(customUrl?: string): Promise<ReferenciaItem[]> {
-  const url = customUrl || (REFERENCIAS_SHEET_ID ? `https://docs.google.com/spreadsheets/d/${REFERENCIAS_SHEET_ID}/export?format=csv` : "");
+  let url = customUrl || (REFERENCIAS_SHEET_ID ? `https://docs.google.com/spreadsheets/d/${REFERENCIAS_SHEET_ID}/export?format=csv` : "");
   if (!url) {
-    return REFERENCIAS_PADRAO;
+    return [];
+  }
+
+  // Normaliza link do Google Sheets para export CSV se fornecido URL comum de visualização
+  const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (match && !url.includes("export?format=")) {
+    url = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv`;
   }
 
   try {
@@ -62,7 +68,7 @@ export async function fetchReferenciasPlanilha(customUrl?: string): Promise<Refe
     const csvText = await res.text();
 
     const lines = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0);
-    if (lines.length <= 1) return REFERENCIAS_PADRAO;
+    if (lines.length <= 1) return [];
 
     const items: ReferenciaItem[] = [];
 
@@ -76,7 +82,6 @@ export async function fetchReferenciasPlanilha(customUrl?: string): Promise<Refe
         const orgao = parts[3] || "";
         const linkTexto = parts[4] || "Acessar Recurso";
 
-        // Mapear URLs correspondentes
         const padrao = REFERENCIAS_PADRAO.find(
           (p) => p.titulo.toLowerCase() === titulo.toLowerCase() || p.item === itemNum
         );
@@ -87,15 +92,15 @@ export async function fetchReferenciasPlanilha(customUrl?: string): Promise<Refe
           categoria,
           orgao,
           linkTexto,
-          url: padrao?.url || "https://efape.educacao.sp.gov.br/curriculopaulista/",
-          descricao: padrao?.descricao || "Material de referência e apoio pedagógico oficial.",
+          url: padrao?.url || "",
+          descricao: padrao?.descricao || "Material de referência e apoio pedagógico.",
         });
       }
     }
 
-    return items.length > 0 ? items : REFERENCIAS_PADRAO;
+    return items;
   } catch (err) {
-    console.warn("Utilizando catálogo padrão de referências (offline/fallback):", err);
-    return REFERENCIAS_PADRAO;
+    console.warn("Erro ao buscar referências da planilha:", err);
+    return [];
   }
 }

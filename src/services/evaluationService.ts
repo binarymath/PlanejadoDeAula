@@ -40,9 +40,15 @@ export const AVALIACOES_PADRAO: AvaliacaoItem[] = [
 ];
 
 export async function fetchAvaliacaoPlanilha(customUrl?: string): Promise<AvaliacaoItem[]> {
-  const url = customUrl || (AVALIACAO_SHEET_ID ? `https://docs.google.com/spreadsheets/d/${AVALIACAO_SHEET_ID}/export?format=csv` : "");
+  let url = customUrl || (AVALIACAO_SHEET_ID ? `https://docs.google.com/spreadsheets/d/${AVALIACAO_SHEET_ID}/export?format=csv` : "");
   if (!url) {
-    return AVALIACOES_PADRAO;
+    return [];
+  }
+
+  // Normaliza link do Google Sheets para export CSV se fornecido URL comum de visualização
+  const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (match && !url.includes("export?format=")) {
+    url = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv`;
   }
 
   try {

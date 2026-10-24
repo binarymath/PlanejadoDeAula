@@ -7,8 +7,9 @@ import {
   Square,
   ChevronDown,
   ChevronUp,
+  Link,
+  CheckCircle2,
   RefreshCw,
-  Info,
 } from "lucide-react";
 import { LessonPlanState } from "../../types/lessonPlan";
 import { getBimesterTitles } from "../../utils/bimesterHelper";
@@ -18,6 +19,7 @@ import {
   agruparPorAprendizagemEssencial,
 } from "../../services/curriculumService";
 
+const STORAGE_CURRICULO_URL_KEY = "planejador_url_planilha_curriculo";
 
 interface ThematicUnitModuleProps {
   data: LessonPlanState;
@@ -30,6 +32,14 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
 }) => {
   const bimesterTitles = getBimesterTitles(data.bimestre);
 
+  // Link da planilha do professor
+  const [urlPlanilha, setUrlPlanilha] = useState<string>(() => {
+    return localStorage.getItem(STORAGE_CURRICULO_URL_KEY) || "";
+  });
+  const [planilhaConectada, setPlanilhaConectada] = useState<boolean>(false);
+  const [conectandoPlanilha, setConectandoPlanilha] = useState<boolean>(false);
+  const [erroMsg, setErroMsg] = useState<string>("");
+
   const [gruposAE, setGruposAE] = useState<GrupoAprendizagemEssencial[]>([]);
   const [selecionadasAE, setSelecionadasAE] = useState<Set<string>>(new Set());
   const [carregando, setCarregando] = useState<boolean>(false);
@@ -40,39 +50,53 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
     data.anoEscolar || (data.turmas && data.turmas.length > 0 && data.turmas[0].nome ? data.turmas[0].nome : "");
   const bimestreAtivo = data.bimestre || "";
 
+  const handleConectarPlanilha = async (urlParaConectar?: string) => {
+    const url = (urlParaConectar ?? urlPlanilha).trim();
+    if (!url) {
+      setErroMsg("Por favor, cole o link da sua planilha de Currículo/Conteúdos.");
+      setPlanilhaConectada(false);
+      setGruposAE([]);
+      return;
+    }
 
-  // Carrega e agrupa as Aprendizagens Essenciais sempre que mudar Ano ou Bimestre
+    try {
+      setConectandoPlanilha(true);
+      setErroMsg("");
+      const aulas = await obterAulasCurriculo(anoEscolarAtivo, bimestreAtivo, url);
+      const grupos = agruparPorAprendizagemEssencial(aulas);
+      setGruposAE(grupos);
+      setPlanilhaConectada(true);
+      localStorage.setItem(STORAGE_CURRICULO_URL_KEY, url);
+    } catch (err: any) {
+      console.error("Erro ao conectar planilha de currículo:", err);
+      setErroMsg(err.message || "Não foi possível carregar a planilha. Verifique as permissões de compartilhamento.");
+      setPlanilhaConectada(false);
+      setGruposAE([]);
+    } finally {
+      setConectandoPlanilha(false);
+    }
+  };
+
   useEffect(() => {
-    let ativo = true;
-    setCarregando(true);
-
-    obterAulasCurriculo(anoEscolarAtivo, bimestreAtivo)
-      .then((aulas) => {
-        if (!ativo) return;
-        const grupos = agruparPorAprendizagemEssencial(aulas);
-        setGruposAE(grupos);
-
-        // Identifica quais AEs já constam no texto atual
-        const textoAtual = data.objetosConhecimento || "";
-        const novosIds = new Set<string>();
-        grupos.forEach((g) => {
-          if (textoAtual.includes(g.aprendizagemEssencial)) {
-            novosIds.add(g.id);
-          }
-        });
-        setSelecionadasAE(novosIds);
-      })
-      .catch((err) => {
-        console.error("Erro ao carregar currículo:", err);
-      })
-      .finally(() => {
-        if (ativo) setCarregando(false);
-      });
-
-    return () => {
-      ativo = false;
-    };
+    if (urlPlanilha.trim()) {
+      handleConectarPlanilha(urlPlanilha.trim());
+    }
   }, [anoEscolarAtivo, bimestreAtivo]);
+
+
+
+  // Sincroniza AEs selecionadas com o texto atual
+  useEffect(() => {
+    const textoAtual = data.objetosConhecimento || "";
+    const novosIds = new Set<string>();
+    gruposAE.forEach((g) => {
+      if (textoAtual.includes(g.aprendizagemEssencial)) {
+        novosIds.add(g.id);
+      }
+    });
+    setSelecionadasAE(novosIds);
+  }, [gruposAE, data.objetosConhecimento]);
+
 
   // Formata o conjunto de AEs selecionadas para o padrão exato solicitado: [AE1]: (Título)
   const formatarGruposParaTexto = (selecionados: Set<string>): string => {
@@ -165,38 +189,97 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
         </div>
 
         {painelAberto && (
-          <div className="p-4 space-y-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-500">
-                Selecione as Aprendizagens Essenciais previstas para este bimestre:
-              </span>
+          <div className="p-4 space-y-4">
+            {/* Campo para o Professor Inserir o Link da Planilha do Google */}
+            <div className="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
+              <label className="block text-[11px] font-bold text-slate-700 uppercase">
+                Link da Planilha Google (Currículo / Objetos de Conhecimento):
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                    <Link className="w-3.5 h-3.5" />
+                  </div>
+                  <input
+                    type="text"
+                    value={urlPlanilha}
+                    onChange={(e) => {
+                      setUrlPlanilha(e.target.value);
+                      if (planilhaConectada) setPlanilhaConectada(false);
+                    }}
+                    placeholder="Cole aqui o link da planilha de currículo (ex: https://docs.google.com/spreadsheets/d/...)"
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-[11px]"
+                  />
+                </div>
 
-              {gruposAE.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleSelectAll}
-                    className="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded text-[11px] font-semibold transition-colors"
-                  >
-                    Marcar Todas
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleClearAll}
-                    className="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-500 rounded text-[11px] font-semibold transition-colors"
-                  >
-                    Desmarcar
-                  </button>
+                <button
+                  type="button"
+                  onClick={() => handleConectarPlanilha()}
+                  disabled={conectandoPlanilha}
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 text-white font-semibold rounded text-xs transition-colors whitespace-nowrap shadow-2xs"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${conectandoPlanilha ? "animate-spin" : ""}`} />
+                  <span>{conectandoPlanilha ? "Conectando..." : planilhaConectada ? "Atualizar Planilha" : "Conectar Planilha"}</span>
+                </button>
+              </div>
+
+              {planilhaConectada && (
+                <div className="flex items-center gap-1.5 text-emerald-600 text-[11px] font-medium pt-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>Planilha de currículo conectada ({gruposAE.length} aprendizagens identificadas).</span>
                 </div>
               )}
             </div>
 
-            {carregando && (
-              <div className="flex items-center gap-2 text-xs text-indigo-700 py-2">
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Carregando Aprendizagens Essenciais do currículo...</span>
-              </div>
+            {/* Mensagem de Erro */}
+            {erroMsg && (
+              <p className="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+                {erroMsg}
+              </p>
             )}
+
+            {planilhaConectada ? (
+              <div className="space-y-3 pt-1 border-t border-slate-200/60">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-500">
+                    Selecione as Aprendizagens Essenciais previstas para este bimestre:
+                  </span>
+
+                  {gruposAE.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSelectAll}
+                        className="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded text-[11px] font-semibold transition-colors"
+                      >
+                        Marcar Todas
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleClearAll}
+                        className="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-500 rounded text-[11px] font-semibold transition-colors"
+                      >
+                        Desmarcar
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {carregando && (
+                  <div className="flex items-center gap-2 text-xs text-indigo-700 py-2">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Carregando Aprendizagens Essenciais do currículo...</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              !conectandoPlanilha && !erroMsg && (
+                <p className="text-xs text-slate-500 italic py-1">
+                  Cole o link da sua planilha de currículo acima e clique em <strong>Conectar Planilha</strong> para selecionar as aprendizagens e objetos de conhecimento.
+                </p>
+              )
+            )}
+
 
             {!carregando && gruposAE.length > 0 && (
               <div className="max-h-72 overflow-y-auto space-y-2 pr-1 divide-y divide-slate-100">

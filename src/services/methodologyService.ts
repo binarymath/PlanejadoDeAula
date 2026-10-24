@@ -17,16 +17,28 @@ export interface MetodologiaAtivaItem {
 }
 
 let cachedMetodologiasWorkbook: XLSX.WorkBook | null = null;
+let cachedMetodologiasUrl = "";
 
-export async function carregarMetodologiasAtivas(): Promise<MetodologiaAtivaItem[]> {
+export async function carregarMetodologiasAtivas(customUrl?: string): Promise<MetodologiaAtivaItem[]> {
+  const rawUrl = (customUrl || METODOLOGIAS_XLSX_URL).trim();
+  let targetUrl = rawUrl;
+  const match = rawUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (match) {
+    targetUrl = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=xlsx`;
+  }
+
   try {
-    if (METODOLOGIAS_XLSX_URL && !cachedMetodologiasWorkbook) {
-      const resp = await fetch(METODOLOGIAS_XLSX_URL);
-      if (resp.ok) {
-        const ab = await resp.arrayBuffer();
-        cachedMetodologiasWorkbook = XLSX.read(ab, { type: "array" });
+    if (targetUrl) {
+      if (!cachedMetodologiasWorkbook || cachedMetodologiasUrl !== targetUrl) {
+        const resp = await fetch(targetUrl);
+        if (resp.ok) {
+          const ab = await resp.arrayBuffer();
+          cachedMetodologiasWorkbook = XLSX.read(ab, { type: "array" });
+          cachedMetodologiasUrl = targetUrl;
+        }
       }
     }
+
 
 
     if (cachedMetodologiasWorkbook) {

@@ -10,15 +10,16 @@ import {
   FileText,
   BarChart3,
   Sliders,
-  Sparkles
+  Sparkles,
+  Link
 } from "lucide-react";
 import { LessonPlanState } from "../../types/lessonPlan";
 import {
   AvaliacaoItem,
   fetchAvaliacaoPlanilha,
-  AVALIACOES_PADRAO
 } from "../../services/evaluationService";
 
+const STORAGE_KEY_URL_AVALIACAO = "planejador_url_planilha_avaliacao";
 
 interface EvaluationModuleProps {
   data: LessonPlanState;
@@ -29,30 +30,48 @@ export const EvaluationModule: React.FC<EvaluationModuleProps> = ({
   data,
   onChange,
 }) => {
-  const [criterios, setCriterios] = useState<AvaliacaoItem[]>(AVALIACOES_PADRAO);
+  const [criterios, setCriterios] = useState<AvaliacaoItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCriteria, setSelectedCriteria] = useState<string[]>([]);
+  const [urlPlanilha, setUrlPlanilha] = useState<string>(() => {
+    return localStorage.getItem(STORAGE_KEY_URL_AVALIACAO) || "";
+  });
+  const [planilhaConectada, setPlanilhaConectada] = useState<boolean>(false);
+  const [erroMsg, setErroMsg] = useState<string | null>(null);
 
-  // Carregar dados da planilha ao montar o componente
-  useEffect(() => {
-    let isMounted = true;
+  const conectarPlanilha = async (urlParaConectar?: string) => {
+    const urlAlvo = (urlParaConectar !== undefined ? urlParaConectar : urlPlanilha).trim();
+    if (!urlAlvo) {
+      setCriterios([]);
+      setPlanilhaConectada(false);
+      setErroMsg("Insira o link da planilha de avaliação para conectar.");
+      return;
+    }
+
     setLoading(true);
-    fetchAvaliacaoPlanilha()
-      .then((items) => {
-        if (isMounted) {
-          setCriterios(items);
-        }
-      })
-      .catch(() => {
-        if (isMounted) setCriterios(AVALIACOES_PADRAO);
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
+    setErroMsg(null);
+    try {
+      const items = await fetchAvaliacaoPlanilha(urlAlvo);
+      if (!items || items.length === 0) {
+        throw new Error("Nenhum critério avaliativo encontrado na planilha informada.");
+      }
+      setCriterios(items);
+      setPlanilhaConectada(true);
+      localStorage.setItem(STORAGE_KEY_URL_AVALIACAO, urlAlvo);
+    } catch (err: any) {
+      setPlanilhaConectada(false);
+      setErroMsg(err.message || "Erro ao conectar e processar planilha.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return () => {
-      isMounted = false;
-    };
+  // Se já havia URL salva no localStorage, conecta automaticamente
+  useEffect(() => {
+    const salva = localStorage.getItem(STORAGE_KEY_URL_AVALIACAO);
+    if (salva) {
+      conectarPlanilha(salva);
+    }
   }, []);
 
   // Sincronizar itens selecionados com o texto atual
@@ -64,14 +83,8 @@ export const EvaluationModule: React.FC<EvaluationModuleProps> = ({
     setSelectedCriteria(selecionados);
   }, [data.criterioAvaliacao, criterios]);
 
-  const handleReload = async () => {
-    setLoading(true);
-    try {
-      const items = await fetchAvaliacaoPlanilha();
-      setCriterios(items);
-    } finally {
-      setLoading(false);
-    }
+  const handleReload = () => {
+    conectarPlanilha();
   };
 
   // Gerar texto formatado com todos os critérios da planilha
@@ -182,18 +195,65 @@ export const EvaluationModule: React.FC<EvaluationModuleProps> = ({
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-indigo-600" : ""}`} />
           </button>
         </div>
-
       </div>
 
-      {/* Painel Informativo da Composição da Nota Bimestral (100%) */}
-      <div className="bg-gradient-to-br from-slate-50 to-indigo-50/30 border border-slate-200 rounded-xl p-4 sm:p-5 space-y-3.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-indigo-600" />
-            <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-              Composição da Nota Bimestral (Planilha Oficial)
-            </span>
+      {/* Barra de Conexão com a Planilha de Avaliação */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+        <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+          <Link className="w-3.5 h-3.5 text-indigo-600" />
+          Link da Planilha Google (Critérios de Avaliação):
+        </label>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+              <Link className="w-3.5 h-3.5" />
+            </div>
+            <input
+              type="text"
+              value={urlPlanilha}
+              onChange={(e) => {
+                setUrlPlanilha(e.target.value);
+                if (planilhaConectada) setPlanilhaConectada(false);
+              }}
+              placeholder="Cole aqui o link da planilha de avaliação (ex: https://docs.google.com/spreadsheets/d/...)"
+              className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-[11px]"
+            />
           </div>
+
+          <button
+            type="button"
+            onClick={() => conectarPlanilha()}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 text-white font-semibold rounded text-xs transition-colors whitespace-nowrap shadow-2xs"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <span>{loading ? "Conectando..." : planilhaConectada ? "Atualizar Planilha" : "Conectar Planilha"}</span>
+          </button>
+        </div>
+
+        {planilhaConectada && (
+          <div className="flex items-center gap-1.5 text-emerald-600 text-[11px] font-medium pt-1">
+            <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Planilha de avaliação conectada ({criterios.length} critérios catalogados).</span>
+          </div>
+        )}
+
+        {erroMsg && (
+          <p className="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+            {erroMsg}
+          </p>
+        )}
+      </div>
+
+      {planilhaConectada && (
+        <div className="bg-gradient-to-br from-slate-50 to-indigo-50/30 border border-slate-200 rounded-xl p-4 sm:p-5 space-y-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-indigo-600" />
+              <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                Composição da Nota Bimestral (Planilha Oficial)
+              </span>
+            </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-500 font-medium">Total de Pesos:</span>
             <span
@@ -305,6 +365,7 @@ export const EvaluationModule: React.FC<EvaluationModuleProps> = ({
           </div>
         </div>
       </div>
+      )}
 
       {/* Editor de Texto Final para o Documento */}
       <div className="space-y-2">

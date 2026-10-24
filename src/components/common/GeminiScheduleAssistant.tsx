@@ -161,14 +161,6 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
             <label className="text-xs font-semibold text-slate-700">
               Chave da API do Google Gemini (gratuita no Google AI Studio):
             </label>
-            <a
-              href="https://aistudio.google.com/app/apikey"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[11px] text-sky-600 hover:underline"
-            >
-              Obter chave gratuita
-            </a>
           </div>
 
           <div className="flex gap-2">

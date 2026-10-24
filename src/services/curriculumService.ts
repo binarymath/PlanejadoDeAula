@@ -28,6 +28,7 @@ export interface GrupoAprendizagemEssencial {
 }
 
 let cachedCurriculoWorkbook: XLSX.WorkBook | null = null;
+let cachedCurriculoUrl = "";
 
 /**
  * Obtém todas as aulas do ano e bimestre informados,
@@ -35,7 +36,8 @@ let cachedCurriculoWorkbook: XLSX.WorkBook | null = null;
  */
 export async function obterAulasCurriculo(
   anoTexto: string,
-  bimestreTexto: string
+  bimestreTexto: string,
+  customUrl?: string
 ): Promise<AulaCurriculoItem[]> {
   // 1. Detectar o ano escolar
   const anoNorm = anoTexto || "";
@@ -49,15 +51,26 @@ export async function obterAulasCurriculo(
   const bimNumero = bimNorm.match(/([1234])/)?.[1] || "1";
   const bimEsperado = `${bimNumero}º Bimestre`;
 
+  const rawUrl = (customUrl || CURRICULO_XLSX_URL).trim();
+  let targetUrl = rawUrl;
+  const match = rawUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (match) {
+    targetUrl = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=xlsx`;
+  }
+
   // Tenta carregar da planilha remota se uma URL válida for configurada
   try {
-    if (CURRICULO_XLSX_URL && !cachedCurriculoWorkbook) {
-      const resp = await fetch(CURRICULO_XLSX_URL);
-      if (resp.ok) {
-        const ab = await resp.arrayBuffer();
-        cachedCurriculoWorkbook = XLSX.read(ab, { type: "array" });
+    if (targetUrl) {
+      if (!cachedCurriculoWorkbook || cachedCurriculoUrl !== targetUrl) {
+        const resp = await fetch(targetUrl);
+        if (resp.ok) {
+          const ab = await resp.arrayBuffer();
+          cachedCurriculoWorkbook = XLSX.read(ab, { type: "array" });
+          cachedCurriculoUrl = targetUrl;
+        }
       }
     }
+
 
 
     if (cachedCurriculoWorkbook && cachedCurriculoWorkbook.Sheets[sheetName]) {

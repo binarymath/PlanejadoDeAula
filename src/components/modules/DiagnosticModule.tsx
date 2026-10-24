@@ -522,20 +522,12 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
                           <span className="text-slate-500 font-medium">{item.componente}</span>
 
                           {item.linkMaterial && (
-                            <a
-                              href={item.linkMaterial}
-                              target="_blank"
-                              rel="noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-0.5 text-sky-600 hover:text-sky-800 ml-auto"
-                            >
-                              <span>Material CMSP</span>
-                              <ExternalLink className="w-2.5 h-2.5" />
-                            </a>
+                            <span className="text-slate-400 ml-auto">Material Pedagógico</span>
                           )}
                         </div>
                       </div>
                     </div>
+
                   );
                 })}
               </div>
