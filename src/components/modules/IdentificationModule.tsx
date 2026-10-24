@@ -15,6 +15,10 @@ import { LessonPlanState, TurmaPlanejada, FeriadoExcecao, TipoEventoEscolar } fr
 import { SPREADSHEETS_CONFIG } from "../../config/spreadsheets";
 import { SpreadsheetConnector } from "../common/SpreadsheetConnector";
 import { calcularAulasPrevistas } from "../../utils/classCalculator";
+import {
+  obterDisciplinasCadastradas,
+  aplicarDisciplinaSelecionada,
+} from "../../services/configLinksService";
 
 interface IdentificationModuleProps {
   data: LessonPlanState;
@@ -39,6 +43,21 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
   const [novoFeriadoDataFim, setNovoFeriadoDataFim] = useState("");
   const [novoFeriadoMotivo, setNovoFeriadoMotivo] = useState("");
   const [novoFeriadoTipo, setNovoFeriadoTipo] = useState<TipoEventoEscolar>("nao_letivo");
+
+  // Lista de disciplinas do arquivo JSON
+  const [disciplinasJSON, setDisciplinasJSON] = useState<string[]>(() => obterDisciplinasCadastradas());
+
+  useEffect(() => {
+    const handleAtualizarDisciplinas = () => {
+      setDisciplinasJSON(obterDisciplinasCadastradas());
+    };
+    window.addEventListener("storage_links_updated", handleAtualizarDisciplinas);
+    window.addEventListener("storage", handleAtualizarDisciplinas);
+    return () => {
+      window.removeEventListener("storage_links_updated", handleAtualizarDisciplinas);
+      window.removeEventListener("storage", handleAtualizarDisciplinas);
+    };
+  }, []);
 
   // Recalcula as aulas sempre que mudar as datas, turmas ou feriados
   useEffect(() => {
@@ -303,16 +322,70 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
-            Componente Curricular:
-          </label>
-          <input
-            type="text"
-            value={data.componenteCurricular}
-            onChange={(e) => onChange("componenteCurricular", e.target.value)}
-            placeholder="Digite o componente curricular..."
-            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all text-sm"
-          />
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs font-semibold text-slate-600 uppercase">
+              Componente Curricular:
+            </label>
+            {disciplinasJSON.length > 0 && (
+              <span className="text-[11px] text-sky-600 font-medium">
+                {disciplinasJSON.includes(data.componenteCurricular)
+                  ? "✔ Planilha vinculada via JSON"
+                  : "Digitação manual"}
+              </span>
+            )}
+          </div>
+
+          {disciplinasJSON.length > 0 ? (
+            <div className="space-y-1.5">
+              <select
+                value={
+                  disciplinasJSON.includes(data.componenteCurricular)
+                    ? data.componenteCurricular
+                    : data.componenteCurricular
+                    ? "__outro__"
+                    : ""
+                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "__outro__") {
+                    // Mantém o valor atual ou limpa para digitação manual
+                    onChange("componenteCurricular", "");
+                  } else {
+                    onChange("componenteCurricular", val);
+                    aplicarDisciplinaSelecionada(val);
+                  }
+                }}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all text-sm font-medium"
+              >
+                <option value="">Selecione uma disciplina cadastrada no JSON...</option>
+                {disciplinasJSON.map((disc) => (
+                  <option key={disc} value={disc}>
+                    {disc}
+                  </option>
+                ))}
+                <option value="__outro__">Outro (Digitar manualmente)...</option>
+              </select>
+
+              {/* Se o professor escolheu Outro ou a disciplina não consta no JSON, exibe input para digitar livremente */}
+              {(!disciplinasJSON.includes(data.componenteCurricular) || !data.componenteCurricular) && (
+                <input
+                  type="text"
+                  value={data.componenteCurricular}
+                  onChange={(e) => onChange("componenteCurricular", e.target.value)}
+                  placeholder="Digite o nome da disciplina manualmente..."
+                  className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all text-xs"
+                />
+              )}
+            </div>
+          ) : (
+            <input
+              type="text"
+              value={data.componenteCurricular}
+              onChange={(e) => onChange("componenteCurricular", e.target.value)}
+              placeholder="Digite o componente curricular (ex: Matemática, Ciências...)..."
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all text-sm"
+            />
+          )}
         </div>
       </div>
 

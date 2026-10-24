@@ -17,8 +17,8 @@ import {
   RotateCcw,
   Menu,
   X,
+  FileJson,
 } from "lucide-react";
-
 
 import { LessonPlanState, initialLessonPlanState } from "./types/lessonPlan";
 import { generateAndDownloadDocx } from "./services/docxExporter";
@@ -34,6 +34,7 @@ import { MethodologyModule } from "./components/modules/MethodologyModule";
 import { EvaluationModule } from "./components/modules/EvaluationModule";
 import { ReferencesModule } from "./components/modules/ReferencesModule";
 import { DocumentPreviewModal } from "./components/common/DocumentPreviewModal";
+import { ConfigLinksModal } from "./components/common/ConfigLinksModal";
 
 const STORAGE_KEY = "planejador_aula_dados_v1";
 
@@ -71,6 +72,7 @@ export const App: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [showPreviewModal, setShowPreviewModal] = useState<boolean>(false);
+  const [showConfigLinksModal, setShowConfigLinksModal] = useState<boolean>(false);
   const [savedFeedback, setSavedFeedback] = useState<boolean>(false);
 
   // Auto-save no LocalStorage
@@ -149,6 +151,16 @@ export const App: React.FC = () => {
                 <CheckCircle className="w-3.5 h-3.5" />
                 Salvo no navegador
               </span>
+
+              {/* Botão discreto para configurar links de planilhas via JSON */}
+              <button
+                type="button"
+                onClick={() => setShowConfigLinksModal(true)}
+                title="Configuração de links das planilhas (.JSON)"
+                className="p-2 border border-slate-300 hover:border-sky-500 hover:bg-sky-50 text-slate-700 hover:text-sky-700 rounded-lg transition-colors flex items-center justify-center shadow-xs"
+              >
+                <FileJson className="w-4 h-4" />
+              </button>
 
               {/* Botão para limpar campos / novo planejamento em branco */}
               <button
@@ -352,6 +364,13 @@ export const App: React.FC = () => {
         onClose={() => setShowPreviewModal(false)}
         onDownload={handleDownload}
         isExporting={isExporting}
+      />
+
+      {/* Modal de Configuração de Links por JSON */}
+      <ConfigLinksModal
+        isOpen={showConfigLinksModal}
+        onClose={() => setShowConfigLinksModal(false)}
+        disciplinaAtual={data.componenteCurricular}
       />
     </div>
   );

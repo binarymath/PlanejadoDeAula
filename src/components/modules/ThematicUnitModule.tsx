@@ -83,6 +83,28 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
     }
   }, [anoEscolarAtivo, bimestreAtivo]);
 
+  // Ouvir atualizações de links (ex: via modal JSON ou troca de disciplina)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const novaUrl = localStorage.getItem(STORAGE_CURRICULO_URL_KEY) || "";
+      if (novaUrl !== urlPlanilha) {
+        setUrlPlanilha(novaUrl);
+        if (novaUrl.trim()) {
+          handleConectarPlanilha(novaUrl.trim());
+        } else {
+          setPlanilhaConectada(false);
+          setGruposAE([]);
+        }
+      }
+    };
+    window.addEventListener("storage_links_updated", handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage_links_updated", handleStorageChange);
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, [urlPlanilha, anoEscolarAtivo, bimestreAtivo]);
+
 
 
   // Sincroniza AEs selecionadas com o texto atual

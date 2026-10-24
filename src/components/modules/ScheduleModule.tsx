@@ -29,14 +29,24 @@ export const ScheduleModule: React.FC<ScheduleModuleProps> = ({
 
   // Carrega as aulas da aba correspondente da planilha de Objetos de Conhecimento se houver URL conectada
   useEffect(() => {
-    const urlCurriculo = localStorage.getItem(STORAGE_CURRICULO_URL_KEY) || "";
-    if (urlCurriculo) {
-      obterAulasCurriculo(anoAtivo, bimestreAtivo, urlCurriculo).then((aulas) => {
-        setAulasCurriculo(aulas);
-      });
-    } else {
-      setAulasCurriculo([]);
-    }
+    const carregarAulas = () => {
+      const urlCurriculo = localStorage.getItem(STORAGE_CURRICULO_URL_KEY) || "";
+      if (urlCurriculo) {
+        obterAulasCurriculo(anoAtivo, bimestreAtivo, urlCurriculo).then((aulas) => {
+          setAulasCurriculo(aulas);
+        });
+      } else {
+        setAulasCurriculo([]);
+      }
+    };
+
+    carregarAulas();
+    window.addEventListener("storage_links_updated", carregarAulas);
+    window.addEventListener("storage", carregarAulas);
+    return () => {
+      window.removeEventListener("storage_links_updated", carregarAulas);
+      window.removeEventListener("storage", carregarAulas);
+    };
   }, [anoAtivo, bimestreAtivo]);
 
   // Semanas calculadas

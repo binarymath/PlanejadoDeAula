@@ -98,6 +98,30 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
     }
   }, []);
 
+  // Ouvir atualizações de links (ex: via modal JSON)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const novaUrl = localStorage.getItem(STORAGE_DIAGNOSTIC_URL_KEY) || "";
+      if (novaUrl !== urlPlanilha) {
+        setUrlPlanilha(novaUrl);
+        if (novaUrl.trim()) {
+          handleConectarPlanilha(novaUrl.trim());
+        } else {
+          setPlanilhaConectada(false);
+          setTodasAbas([]);
+          setAbaSelecionada("");
+          setDescritores([]);
+        }
+      }
+    };
+    window.addEventListener("storage_links_updated", handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage_links_updated", handleStorageChange);
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, [urlPlanilha]);
+
   // 1. Identifica o nível a partir do Ano Escolar / Turmas
   const nivelDetectado =
     extrairNivelEscolar(data.anoEscolar) ||
