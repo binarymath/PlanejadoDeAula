@@ -21,7 +21,7 @@ export const SpreadsheetConnector: React.FC<SpreadsheetConnectorProps> = ({
   const handleSync = async () => {
     if (!currentUrl.trim()) {
       setStatus("error");
-      setMessage("Defina o endereço da planilha no arquivo src/config/spreadsheets.ts ou digite acima.");
+      setMessage("Insira o link da planilha no campo acima para conectar.");
       return;
     }
 
@@ -61,9 +61,6 @@ export const SpreadsheetConnector: React.FC<SpreadsheetConnectorProps> = ({
           <Table className="w-4 h-4 text-sky-600" />
           <span>Fonte da Planilha ({config.moduleName})</span>
         </div>
-        <span className="text-slate-400 font-mono text-[11px]">
-          config: spreadsheets.ts [{config.id}]
-        </span>
       </div>
 
       <p className="text-slate-500 mb-2 leading-relaxed">
@@ -79,7 +76,7 @@ export const SpreadsheetConnector: React.FC<SpreadsheetConnectorProps> = ({
             type="text"
             value={currentUrl}
             onChange={(e) => setCurrentUrl(e.target.value)}
-            placeholder="Cole a URL da planilha ou configure em src/config/spreadsheets.ts"
+            placeholder="Cole aqui o link da planilha Google..."
             className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded text-slate-800 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono text-[11px]"
           />
         </div>

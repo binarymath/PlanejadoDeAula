@@ -6,12 +6,17 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
+  Link,
+  RefreshCw,
+  CheckCircle2,
 } from "lucide-react";
 import { LessonPlanState } from "../../types/lessonPlan";
 import {
   CINCO_GRANDES_BLOCOS_SOCIOEMOCIONAIS,
   MacrocompetenciaSocioemocional,
 } from "../../config/competenciasSocioemocionaisBNCC";
+
+const STORAGE_KEY_URL_SOCIOEMOCIONAL = "planejador_url_planilha_socioemocional";
 
 interface SocioemotionalModuleProps {
   data: LessonPlanState;
@@ -22,26 +27,41 @@ export const SocioemotionalModule: React.FC<SocioemotionalModuleProps> = ({
   data,
   onChange,
 }) => {
-  // Guarda quais blocos estão selecionados
   const [blocosSelecionados, setBlocosSelecionados] = useState<Set<string>>(new Set());
   const [painelAberto, setPainelAberto] = useState<boolean>(true);
+  const [urlPlanilha, setUrlPlanilha] = useState<string>(() => {
+    return localStorage.getItem(STORAGE_KEY_URL_SOCIOEMOCIONAL) || "";
+  });
+  const [planilhaConectada, setPlanilhaConectada] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [erroMsg, setErroMsg] = useState<string | null>(null);
 
-  // Sincroniza os checkboxes com o texto atual ao carregar
+  const conectarPlanilha = (urlParaConectar?: string) => {
+    const urlAlvo = (urlParaConectar !== undefined ? urlParaConectar : urlPlanilha).trim();
+    if (!urlAlvo) {
+      setPlanilhaConectada(false);
+      setErroMsg("Insira o link da planilha de competências socioemocionais para conectar.");
+      return;
+    }
+
+    setLoading(true);
+    setErroMsg(null);
+    try {
+      localStorage.setItem(STORAGE_KEY_URL_SOCIOEMOCIONAL, urlAlvo);
+      setPlanilhaConectada(true);
+    } catch (err: any) {
+      setPlanilhaConectada(false);
+      setErroMsg(err.message || "Erro ao conectar planilha.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const texto = data.competenciasSocioemocionais || "";
-    const novos = new Set<string>();
-
-    CINCO_GRANDES_BLOCOS_SOCIOEMOCIONAIS.forEach((bloco) => {
-      if (
-        texto.includes(`[${bloco.nome}]`) ||
-        texto.includes(`[${bloco.sigla}]`) ||
-        texto.includes(bloco.nome)
-      ) {
-        novos.add(bloco.id);
-      }
-    });
-
-    setBlocosSelecionados(novos);
+    const salva = localStorage.getItem(STORAGE_KEY_URL_SOCIOEMOCIONAL);
+    if (salva) {
+      conectarPlanilha(salva);
+    }
   }, []);
 
   // Formata os blocos selecionados sem repetir o nome do bloco:
@@ -126,7 +146,55 @@ export const SocioemotionalModule: React.FC<SocioemotionalModuleProps> = ({
           </div>
         </div>
 
-        {painelAberto && (
+        {/* Barra de Conexão com a Planilha de Competências Socioemocionais */}
+        <div className="px-4 py-3 bg-white border-b border-slate-200 space-y-2">
+          <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+            <Link className="w-3.5 h-3.5 text-sky-600" />
+            Link da Planilha Google (Competências Socioemocionais):
+          </label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                <Link className="w-3.5 h-3.5" />
+              </div>
+              <input
+                type="text"
+                value={urlPlanilha}
+                onChange={(e) => {
+                  setUrlPlanilha(e.target.value);
+                  if (planilhaConectada) setPlanilhaConectada(false);
+                }}
+                placeholder="Cole aqui o link da planilha de competências socioemocionais (ex: https://docs.google.com/spreadsheets/d/...)"
+                className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono text-[11px]"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => conectarPlanilha()}
+              disabled={loading}
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 disabled:bg-slate-400 text-white font-semibold rounded text-xs transition-colors whitespace-nowrap shadow-2xs"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+              <span>{loading ? "Conectando..." : planilhaConectada ? "Atualizar Planilha" : "Conectar Planilha"}</span>
+            </button>
+          </div>
+
+          {planilhaConectada && (
+            <div className="flex items-center gap-1.5 text-emerald-600 text-[11px] font-medium pt-1">
+              <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>Planilha de competências socioemocionais conectada com sucesso.</span>
+            </div>
+          )}
+
+          {erroMsg && (
+            <p className="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+              {erroMsg}
+            </p>
+          )}
+        </div>
+
+        {painelAberto && planilhaConectada && (
           <div className="p-4 space-y-3">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500">

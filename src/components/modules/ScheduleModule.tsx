@@ -105,14 +105,7 @@ export const ScheduleModule: React.FC<ScheduleModuleProps> = ({
           rows={14}
           value={data.cronograma}
           onChange={(e) => onChange("cronograma", e.target.value)}
-          placeholder={`FEVEREIRO:
-02/02 a 06/02: Apresentação do plano e acolhimento dos estudantes.
-09/02 a 13/02: Os números naturais em situações do cotidiano.
-16/02 a 20/02: [16/02 a 18/02 - Carnaval] Retomada e nivelamento das aprendizagens.
-23/02 a 27/02: Resolução de situações-problema e atividades em grupo.
-
-MARÇO:
-02/03 a 06/03: Aprofundamento temático e desenvolvimento de projetos.`}
+          placeholder="Digite o cronograma detalhado de aulas ou utilize o assistente acima para gerar automaticamente..."
           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all text-sm leading-relaxed font-mono text-xs"
         />
         <p className="text-[11px] text-slate-400 mt-1">
