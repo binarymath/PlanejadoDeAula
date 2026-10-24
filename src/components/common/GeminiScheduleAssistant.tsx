@@ -209,7 +209,7 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
                   Chave da API do Google Gemini
                 </h4>
                 <p className="text-xs text-slate-600 mt-0.5">
-                  A chave é gratuita e gerada pelo Google AI Studio. Fica salva com total segurança apenas no seu navegador.
+                  A chave é gratuita e gerada pelo Google AI Studio. Fica salva apenas no seu navegador.
                 </p>
               </div>
               {apiKey && (
