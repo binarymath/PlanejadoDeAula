@@ -116,9 +116,10 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                   <div>
                     <span className="font-bold text-slate-900 text-sm">Escola: </span>
                     <span className="font-bold text-slate-800 text-sm">
-                      {data.nomeEscola || "EE PROF. MARCO ANTÔNIO MENCACCI"}
+                      {data.nomeEscola || "________________________________________________"}
                     </span>
                   </div>
+
                 </div>
 
                 <div className="flex flex-wrap justify-between gap-y-1">

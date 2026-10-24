@@ -22,8 +22,9 @@ export const ScheduleModule: React.FC<ScheduleModuleProps> = ({
   const [colunaEscolhida, setColunaEscolhida] = useState<ColunaCurriculoOpcao>("conteudo");
 
   // Ano e bimestre ativos
-  const anoAtivo = data.anoEscolar || (data.turmas && data.turmas.length > 0 ? data.turmas[0].nome : "6º Ano");
-  const bimestreAtivo = data.bimestre || "1º Bimestre";
+  const anoAtivo = data.anoEscolar || (data.turmas && data.turmas.length > 0 && data.turmas[0].nome ? data.turmas[0].nome : "");
+  const bimestreAtivo = data.bimestre || "";
+
 
   // Carrega as aulas da aba correspondente da planilha de Objetos de Conhecimento
   useEffect(() => {

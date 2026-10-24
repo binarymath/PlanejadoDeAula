@@ -14,7 +14,9 @@ import {
   Award,
   Library,
   Save,
+  RotateCcw,
 } from "lucide-react";
+
 
 import { LessonPlanState, initialLessonPlanState } from "./types/lessonPlan";
 import { generateAndDownloadDocx } from "./services/docxExporter";
@@ -107,6 +109,13 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleReset = () => {
+    if (window.confirm("Deseja iniciar um novo planejamento em branco? Os campos atuais serão limpos.")) {
+      localStorage.removeItem(STORAGE_KEY);
+      setData(initialLessonPlanState);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col text-slate-800">
       {/* Container de tela (completamente ocultado ao imprimir para nunca vazar atrás do documento) */}
@@ -123,7 +132,7 @@ export const App: React.FC = () => {
                 Planejador de Aula • Guia Bimestral
               </h1>
               <p className="text-xs text-slate-500">
-                EE Prof. Marco Antônio Mencacci • SEDUC-SP
+                {data.nomeEscola ? `${data.nomeEscola} • SEDUC-SP` : "Planejamento Curricular Integrado • SEDUC-SP"}
               </p>
             </div>
           </div>
@@ -137,6 +146,16 @@ export const App: React.FC = () => {
               <CheckCircle className="w-3.5 h-3.5" />
               Salvo no navegador
             </span>
+
+            {/* Botão para limpar campos / novo planejamento em branco */}
+            <button
+              type="button"
+              onClick={handleReset}
+              title="Iniciar novo planejamento em branco"
+              className="p-2 border border-slate-300 hover:border-rose-400 hover:bg-rose-50 text-slate-600 hover:text-rose-700 rounded-lg transition-colors flex items-center justify-center shadow-xs"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
 
             {/* Botão de impressora no canto superior direito para abrir a pré-visualização */}
             <button
@@ -160,6 +179,7 @@ export const App: React.FC = () => {
           </div>
         </div>
       </header>
+
 
       {/* Conteúdo Principal com Abas */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">

@@ -38,8 +38,9 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
 
   // Ano e bimestre selecionados
   const anoEscolarAtivo =
-    data.anoEscolar || (data.turmas && data.turmas.length > 0 ? data.turmas[0].nome : "6º Ano");
-  const bimestreAtivo = data.bimestre || "1º Bimestre";
+    data.anoEscolar || (data.turmas && data.turmas.length > 0 && data.turmas[0].nome ? data.turmas[0].nome : "");
+  const bimestreAtivo = data.bimestre || "";
+
 
   // Carrega e agrupa as Aprendizagens Essenciais sempre que mudar Ano ou Bimestre
   useEffect(() => {
@@ -143,12 +144,13 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
             <Layers className="w-4 h-4 text-indigo-600" />
             <span>
-              Currículo Oficial • {anoEscolarAtivo} ({bimestreAtivo})
+              Currículo Oficial{anoEscolarAtivo ? ` • ${anoEscolarAtivo}` : ""}{bimestreAtivo ? ` (${bimestreAtivo})` : ""}
             </span>
             <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded font-medium text-[11px]">
               {gruposAE.length} Aprendizagens Essenciais
             </span>
           </div>
+
 
           <div className="flex items-center gap-3">
             <a

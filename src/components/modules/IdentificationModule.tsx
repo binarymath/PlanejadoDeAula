@@ -29,8 +29,9 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const turmas = Array.isArray(data.turmas) && data.turmas.length > 0 ? data.turmas : [
-    { id: "1", nome: data.anoEscolar || "Turma 1", aulasPorDia: { seg: 2, ter: 0, qua: 2, qui: 0, sex: 0 } }
+    { id: "1", nome: data.anoEscolar || "", aulasPorDia: { seg: 0, ter: 0, qua: 0, qui: 0, sex: 0 } }
   ];
+
   const feriados = Array.isArray(data.feriadosExcecoes) ? data.feriadosExcecoes : [];
 
   // Estado para novo evento / exceção
@@ -105,11 +106,12 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
   const handleAddTurma = () => {
     const novaTurma: TurmaPlanejada = {
       id: String(Date.now()),
-      nome: `Turma ${data.turmas.length + 1}`,
-      aulasPorDia: { seg: 2, ter: 0, qua: 2, qui: 0, sex: 0 },
+      nome: "",
+      aulasPorDia: { seg: 0, ter: 0, qua: 0, qui: 0, sex: 0 },
     };
     onChange("turmas", [...data.turmas, novaTurma]);
   };
+
 
   const handleRemoveTurma = (id: string) => {
     if (data.turmas.length <= 1) {
@@ -232,9 +234,10 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
               type="text"
               value={data.nomeEscola}
               onChange={(e) => onChange("nomeEscola", e.target.value)}
-              placeholder="Ex: EE PROF. MARCO ANTÔNIO MENCACCI"
+              placeholder="Digite o nome da Unidade Escolar..."
               className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all text-sm font-semibold"
             />
+
           </div>
 
           <div>
@@ -328,11 +331,13 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
               onChange={(e) => onChange("bimestre", e.target.value)}
               className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all text-sm font-medium"
             >
+              <option value="">Selecione o Bimestre...</option>
               <option value="1º Bimestre">1º Bimestre</option>
               <option value="2º Bimestre">2º Bimestre</option>
               <option value="3º Bimestre">3º Bimestre</option>
               <option value="4º Bimestre">4º Bimestre</option>
             </select>
+
           </div>
 
           <div>

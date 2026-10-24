@@ -67,11 +67,12 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
       const letraTurma = extrairLetraTurma(primeiraTurma) || "A";
 
       // Padrão de busca: ex "7A-1B"
-      const nomeAbaEsperada = `${nivelDetectado || "7"}${letraTurma}-${sufixoBim}`;
+      const nomeAbaEsperada = nivelDetectado ? `${nivelDetectado}${letraTurma}-${sufixoBim}` : "";
       const abaEncontrada =
-        abasDoNivel.find((a) => a.toUpperCase() === nomeAbaEsperada.toUpperCase()) ||
+        (nomeAbaEsperada && abasDoNivel.find((a) => a.toUpperCase() === nomeAbaEsperada.toUpperCase())) ||
         abasDoNivel.find((a) => a.includes(sufixoBim)) ||
         abasDoNivel[0];
+
 
       if (abaEncontrada && abaEncontrada !== abaSelecionada) {
         setAbaSelecionada(abaEncontrada);
@@ -334,9 +335,12 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
                   })}
                 </select>
 
-                <span className="text-[11px] text-slate-400">
-                  (Restrito ao {nivelDetectado || "7"}º Ano)
-                </span>
+                {nivelDetectado && (
+                  <span className="text-[11px] text-slate-400">
+                    (Restrito ao {nivelDetectado}º Ano)
+                  </span>
+                )}
+
               </div>
 
               {descritores.length > 0 && (

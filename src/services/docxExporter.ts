@@ -66,19 +66,20 @@ export async function generateAndDownloadDocx(data: LessonPlanState, customFileN
     // 4. Formata os dados para o template
     const renderData = {
       // Título do cabeçalho oficial de largura total
-      headerEscolaNome: (data.nomeEscola || "EE PROF. MARCO ANTÔNIO MENCACCI").toUpperCase(),
+      headerEscolaNome: (data.nomeEscola || "________________________________________________").toUpperCase(),
 
       // Títulos dinâmicos conforme o bimestre selecionado
       tituloSecaoRecuperacao: bimesterTitles.tituloRecuperacao,
       tituloSecaoConteudos: bimesterTitles.tituloConteudos,
 
-      nomeEscola: data.nomeEscola || "EE PROF. MARCO ANTÔNIO MENCACCI",
+      nomeEscola: data.nomeEscola || "________________________________________________",
       nomeProfessor: data.nomeProfessor || "_______________________________",
       componenteCurricular: data.componenteCurricular || "___________________",
       anoEscolar: data.anoEscolar || "__________",
       bimestre: bimestreFormatado,
       aulasPrevistas: data.aulasPrevistas || "____",
       controleFrequencia: data.controleFrequencia || "Acompanhamento diário no Diário Digital (SED)",
+
       aprendizagensNaoConsolidadas: data.aprendizagensNaoConsolidadas || "Não informado.",
       objetosConhecimento: data.objetosConhecimento || "Não informado.",
       competenciasSocioemocionais: data.competenciasSocioemocionais || "Não informado.",

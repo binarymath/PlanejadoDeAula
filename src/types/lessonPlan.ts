@@ -59,29 +59,25 @@ export interface LessonPlanState {
 export const initialTurmas: TurmaPlanejada[] = [
   {
     id: "1",
-    nome: "6º Ano A",
-    aulasPorDia: { seg: 2, ter: 0, qua: 2, qui: 0, sex: 0 },
+    nome: "",
+    aulasPorDia: { seg: 0, ter: 0, qua: 0, qui: 0, sex: 0 },
     aulasSabadoLetivo: 0,
   },
 ];
 
 export const initialLessonPlanState: LessonPlanState = {
-  nomeEscola: "EE PROF. MARCO ANTÔNIO MENCACCI",
+  nomeEscola: "",
   logoEscolaBase64: "",
   nomeProfessor: "",
   componenteCurricular: "",
-  anoEscolar: "6º Ano A",
-  bimestre: "1º Bimestre",
-  dataInicioBimestre: "2026-02-05",
-  dataFimBimestre: "2026-04-18",
-  aulasPrevistas: "40",
-  controleFrequencia: "Acompanhamento diário no Diário Digital (SED)",
+  anoEscolar: "",
+  bimestre: "",
+  dataInicioBimestre: "",
+  dataFimBimestre: "",
+  aulasPrevistas: "",
+  controleFrequencia: "",
   turmas: initialTurmas,
-  feriadosExcecoes: [
-    { id: "f1", data: "2026-02-16", motivo: "Carnaval (Segunda-feira)", tipo: "nao_letivo" },
-    { id: "f2", data: "2026-02-17", motivo: "Carnaval (Terça-feira)", tipo: "nao_letivo" },
-    { id: "f3", data: "2026-04-03", motivo: "Sexta-feira Santa", tipo: "nao_letivo" },
-  ],
+  feriadosExcecoes: [],
   aprendizagensNaoConsolidadas: "",
   objetosConhecimento: "",
   competenciasSocioemocionais: "",
@@ -90,3 +86,4 @@ export const initialLessonPlanState: LessonPlanState = {
   criterioAvaliacao: "",
   referenciasApoio: "",
 };
+
