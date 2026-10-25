@@ -1,0 +1,24 @@
+# ==============================================================================
+# CONFIGURAÇÃO DE LINKS DO NOTEBOOKLM - PLANEJADOR DE AULA
+# ==============================================================================
+# Como preencher:
+# Adicione um card por linha utilizando o caractere pipe "|" como separador:
+#
+# Formato:
+# Titulo | Link | Descricao | Categoria ou Disciplina | Cor
+#
+# Cores suportadas: azul, roxo, verde, amarelo, rosa, cinza
+# Linhas iniciadas com "#" ou em branco são ignoradas.
+# ==============================================================================
+
+Matemática - 6º ao 9º Ano | https://notebook.google.com/notebook/8f1e8714-23b5-4a21-b587-194891db9bcd | Caderno de apoio com objetos de conhecimento, exercícios graduais e recuperação de aprendizagens. | Matemática | azul
+
+# Língua Portuguesa - Ensino Fundamental | https://notebooklm.google.com| Coletânea de textos, desenvolvimento de habilidades leitoras, interpretação e escrita. | Português | roxo
+
+# Ciências da Natureza & Experimentos | https://notebooklm.google.com | Roteiros investigativos, mapas conceituais e projetos práticos alinhados ao Currículo Paulista. | Ciências | verde
+
+# Gestão de Sala & Metodologias Ativas | https://notebooklm.google.com | Dinâmicas pedagógicas, rubricas de avaliação formativa e engajamento para turmas desafiadoras. | Metodologias | amarelo
+
+# Competências Socioemocionais | https://notebooklm.google.com | Atividades práticas baseadas nos 5 Grandes Blocos do Instituto Ayrton Senna e SEDUC-SP. | Socioemocional | rosa
+
+# Recuperação e Nivelamento Bimestral | https://notebooklm.google.com | Estratégias e materiais focados nas aprendizagens essenciais não consolidadas detectadas. | Apoio Pedagógico | azul

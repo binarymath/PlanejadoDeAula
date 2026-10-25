@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Sparkles,
   Award,
@@ -31,8 +31,6 @@ interface AssessmentAssistantProps {
 
 export const AssessmentAssistant: React.FC<AssessmentAssistantProps> = ({ data }) => {
   const [apiKey, setApiKey] = useState<string>(() => obterGeminiApiKey());
-  const [inputKey, setInputKey] = useState<string>(() => obterGeminiApiKey());
-  const [mostrarConfigKey, setMostrarConfigKey] = useState<boolean>(!obterGeminiApiKey());
   const [instrucaoExtra, setInstrucaoExtra] = useState<string>("");
   const [carregando, setCarregando] = useState<boolean>(false);
   const [erro, setErro] = useState<string>("");
@@ -41,14 +39,18 @@ export const AssessmentAssistant: React.FC<AssessmentAssistantProps> = ({ data }
   const [copiado, setCopiado] = useState<boolean>(false);
   const [painelAberto, setPainelAberto] = useState<boolean>(false);
 
-  // Salvar Chave
-  const handleSalvarKey = () => {
-    const limpa = inputKey.trim();
-    salvarGeminiApiKey(limpa);
-    setApiKey(limpa);
-    setMostrarConfigKey(false);
-    setErro("");
-  };
+  // Mantém apiKey sincronizada caso seja atualizada pelo modal no topo
+  useEffect(() => {
+    const atualizar = () => {
+      setApiKey(obterGeminiApiKey());
+    };
+    window.addEventListener("storage", atualizar);
+    window.addEventListener("focus", atualizar);
+    return () => {
+      window.removeEventListener("storage", atualizar);
+      window.removeEventListener("focus", atualizar);
+    };
+  }, []);
 
   // Gerar Avaliação
   const handleGerar = async () => {
@@ -304,90 +306,7 @@ export const AssessmentAssistant: React.FC<AssessmentAssistantProps> = ({ data }
 
   return (
     <div className="bg-gradient-to-br from-amber-50/70 via-white to-amber-50/40 border border-amber-200/80 rounded-xl p-4 sm:p-5 space-y-4 shadow-xs print:hidden">
-      {/* Cabeçalho da Seção */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-amber-500 text-white rounded-lg shadow-2xs">
-            <Award className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-slate-800">
-                Sugestão de Avaliação (Retomada Diagnóstica)
-              </h3>
-              <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 rounded-full border border-amber-200">
-                10 Questões Graduais • IA Gemini
-              </span>
-            </div>
-            <p className="text-xs text-slate-500">
-              Auxilia o(a) professor(a) a avaliar e nivelar os alunos desde muita dificuldade até domínio pleno.
-              <strong className="text-amber-800 ml-1">Não entra na impressão do plano oficial.</strong>
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setMostrarConfigKey(!mostrarConfigKey)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors"
-          >
-            <Key className="w-3.5 h-3.5 text-amber-600" />
-            <span>{apiKey ? "API Key Configurada" : "Inserir Chave Gemini"}</span>
-          </button>
-
-          {avaliacao && (
-            <button
-              type="button"
-              onClick={() => setPainelAberto(!painelAberto)}
-              className="p-1.5 text-slate-500 hover:text-slate-700 bg-white border border-slate-200 rounded-lg transition-colors"
-              title={painelAberto ? "Ocultar questões" : "Expandir questões"}
-            >
-              {painelAberto ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Caixa de Configuração de Chave API (se expandida) */}
-      {mostrarConfigKey && (
-        <div className="p-3 bg-white border border-slate-200 rounded-lg space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-slate-700">
-              Chave de API do Google Gemini:
-            </label>
-            <a
-              href="https://aistudio.google.com/app/apikey"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] text-sky-600 hover:underline flex items-center gap-1"
-            >
-              <span>Obter chave gratuita no Google AI Studio</span>
-            </a>
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="password"
-              value={inputKey}
-              onChange={(e) => setInputKey(e.target.value)}
-              placeholder="Cole sua chave AIzaSy..."
-              className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-300 rounded text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-amber-500"
-            />
-            <button
-              type="button"
-              onClick={handleSalvarKey}
-              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold transition-colors"
-            >
-              Salvar
-            </button>
-          </div>
-          <p className="text-[11px] text-slate-400">
-            A chave fica salva exclusivamente no seu navegador (localStorage) e não é enviada para servidores externos.
-          </p>
-        </div>
-      )}
-
-      {/* Instruções Adicionais Opcionais e Disparo */}
+      {/* Barra de Ações e Disparo */}
       <div className="flex flex-col sm:flex-row gap-2 items-center">
         <input
           type="text"

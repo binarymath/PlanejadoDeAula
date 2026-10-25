@@ -19,6 +19,8 @@ import {
   X,
   FileJson,
   Sparkles,
+  Key,
+  BookOpenCheck,
 } from "lucide-react";
 
 import { LessonPlanState, initialLessonPlanState } from "./types/lessonPlan";
@@ -35,8 +37,10 @@ import { MethodologyModule } from "./components/modules/MethodologyModule";
 import { EvaluationModule } from "./components/modules/EvaluationModule";
 import { ReferencesModule } from "./components/modules/ReferencesModule";
 import { AssessmentModule } from "./components/modules/AssessmentModule";
+import { NotebookLMModule } from "./components/modules/NotebookLMModule";
 import { DocumentPreviewModal } from "./components/common/DocumentPreviewModal";
 import { ConfigLinksModal } from "./components/common/ConfigLinksModal";
+import { GeminiApiKeyModal } from "./components/common/GeminiApiKeyModal";
 
 const STORAGE_KEY = "planejador_aula_dados_v1";
 
@@ -75,6 +79,7 @@ export const App: React.FC = () => {
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [showPreviewModal, setShowPreviewModal] = useState<boolean>(false);
   const [showConfigLinksModal, setShowConfigLinksModal] = useState<boolean>(false);
+  const [showGeminiModal, setShowGeminiModal] = useState<boolean>(false);
   const [savedFeedback, setSavedFeedback] = useState<boolean>(false);
 
   // Auto-save no LocalStorage
@@ -104,6 +109,7 @@ export const App: React.FC = () => {
     { id: "avaliacao", title: "7. Avaliação", icon: Award },
     { id: "referencias", title: "8. Referências", icon: Library },
     { id: "sugestaoAvaliacao", title: "Sugestão de Avaliação", icon: Sparkles, badge: "IA" },
+    { id: "notebooklm", title: "Consulte o nosso Gemini Notebook", icon: BookOpenCheck, badge: "Cadernos" },
   ];
 
   const handleDownload = async () => {
@@ -154,6 +160,17 @@ export const App: React.FC = () => {
                 <CheckCircle className="w-3.5 h-3.5" />
                 Salvo no navegador
               </span>
+
+              {/* Botão discreto com fundo branco para Inserir API Gemini */}
+              <button
+                type="button"
+                onClick={() => setShowGeminiModal(true)}
+                title="Configurar Chave da API do Google Gemini (IA)"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-sky-700 border border-slate-300 hover:border-sky-400 rounded-lg text-xs font-semibold shadow-xs transition-colors"
+              >
+                <Key className="w-3.5 h-3.5 text-sky-600" />
+                <span className="hidden sm:inline">API Gemini</span>
+              </button>
 
               {/* Botão discreto para configurar links de planilhas via JSON */}
               <button
@@ -327,6 +344,9 @@ export const App: React.FC = () => {
             {activeTab === "sugestaoAvaliacao" && (
               <AssessmentModule data={data} />
             )}
+            {activeTab === "notebooklm" && (
+              <NotebookLMModule />
+            )}
           </div>
 
           {/* Barra Inferior de Navegação Rápida entre Abas */}
@@ -378,6 +398,12 @@ export const App: React.FC = () => {
         onClose={() => setShowConfigLinksModal(false)}
         dadosAtuais={data}
         onRestaurarDados={(novosDados) => setData(novosDados)}
+      />
+
+      {/* Modal de Configuração da Chave da API do Google Gemini */}
+      <GeminiApiKeyModal
+        isOpen={showGeminiModal}
+        onClose={() => setShowGeminiModal(false)}
       />
     </div>
   );

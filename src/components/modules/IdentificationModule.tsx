@@ -13,8 +13,19 @@ import {
   Link as LinkIcon,
   Loader2,
   ExternalLink,
+  CalendarRange,
+  Settings2,
+  X,
+  Filter,
 } from "lucide-react";
-import { LessonPlanState, TurmaPlanejada, FeriadoExcecao, TipoEventoEscolar } from "../../types/lessonPlan";
+import {
+  LessonPlanState,
+  TurmaPlanejada,
+  FeriadoExcecao,
+  TipoEventoEscolar,
+  CalendarioBimestres,
+  CALENDARIO_BIMESTRES_PADRAO,
+} from "../../types/lessonPlan";
 import { SPREADSHEETS_CONFIG } from "../../config/spreadsheets";
 import { SpreadsheetConnector } from "../common/SpreadsheetConnector";
 import { calcularAulasPrevistas } from "../../utils/classCalculator";
@@ -59,6 +70,18 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
   const [novoFeriadoDataFim, setNovoFeriadoDataFim] = useState("");
   const [novoFeriadoMotivo, setNovoFeriadoMotivo] = useState("");
   const [novoFeriadoTipo, setNovoFeriadoTipo] = useState<TipoEventoEscolar>("nao_letivo");
+
+  // Estado para modal dos 4 bimestres e filtro de exibição de eventos
+  const [modalBimestresAberto, setModalBimestresAberto] = useState<boolean>(false);
+  const [verTodosEventosAno, setVerTodosEventosAno] = useState<boolean>(false);
+
+  // Calendário efetivo dos 4 bimestres (persistido em data.calendarioBimestres)
+  const calendarioEfetivo = useMemo<CalendarioBimestres>(() => {
+    return {
+      ...CALENDARIO_BIMESTRES_PADRAO,
+      ...(data.calendarioBimestres || {}),
+    };
+  }, [data.calendarioBimestres]);
 
   // Lista de disciplinas do arquivo JSON
   const [disciplinasJSON, setDisciplinasJSON] = useState<string[]>(() => obterDisciplinasCadastradas());
@@ -359,6 +382,99 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
       data.feriadosExcecoes.filter((f) => f.id !== id)
     );
   };
+
+  // Troca de Bimestre com carregamento automático das datas pré-configuradas
+  const handleBimestreChange = (novoBimestre: string) => {
+    onChange("bimestre", novoBimestre);
+    if (novoBimestre && calendarioEfetivo[novoBimestre]) {
+      const { inicio, fim } = calendarioEfetivo[novoBimestre];
+      onChange("dataInicioBimestre", inicio);
+      onChange("dataFimBimestre", fim);
+    }
+  };
+
+  // Alteração manual da data de início do bimestre atual
+  const handleDataInicioChange = (novaData: string) => {
+    onChange("dataInicioBimestre", novaData);
+    if (data.bimestre && calendarioEfetivo[data.bimestre]) {
+      const novoCalendario: CalendarioBimestres = {
+        ...calendarioEfetivo,
+        [data.bimestre]: {
+          ...calendarioEfetivo[data.bimestre],
+          inicio: novaData,
+        },
+      };
+      onChange("calendarioBimestres", novoCalendario);
+    }
+  };
+
+  // Alteração manual da data de término do bimestre atual
+  const handleDataFimChange = (novaData: string) => {
+    onChange("dataFimBimestre", novaData);
+    if (data.bimestre && calendarioEfetivo[data.bimestre]) {
+      const novoCalendario: CalendarioBimestres = {
+        ...calendarioEfetivo,
+        [data.bimestre]: {
+          ...calendarioEfetivo[data.bimestre],
+          fim: novaData,
+        },
+      };
+      onChange("calendarioBimestres", novoCalendario);
+    }
+  };
+
+  // Atualização em lote pelo modal de configuração dos 4 bimestres
+  const handleSalvarPeriodoBimestreModal = (bim: string, campo: "inicio" | "fim", valor: string) => {
+    const novoCalendario: CalendarioBimestres = {
+      ...calendarioEfetivo,
+      [bim]: {
+        ...(calendarioEfetivo[bim] || { inicio: "", fim: "" }),
+        [campo]: valor,
+      },
+    };
+    onChange("calendarioBimestres", novoCalendario);
+
+    // Se estiver editando o bimestre atualmente ativo, reflete imediatamente
+    if (data.bimestre === bim) {
+      if (campo === "inicio") onChange("dataInicioBimestre", valor);
+      if (campo === "fim") onChange("dataFimBimestre", valor);
+    }
+  };
+
+  // Descobre a qual bimestre um evento pertence baseado nas datas cadastradas
+  const identificarBimestreDoEvento = (dataEvento: string): string | null => {
+    if (!dataEvento) return null;
+    for (const [bimNome, periodo] of Object.entries(calendarioEfetivo)) {
+      if (periodo.inicio && periodo.fim && dataEvento >= periodo.inicio && dataEvento <= periodo.fim) {
+        return bimNome.replace("º Bimestre", "º Bim");
+      }
+    }
+    return null;
+  };
+
+  // Verifica se o evento está dentro do bimestre atualmente selecionado
+  const eventoPertenceAoBimestreAtual = (f: FeriadoExcecao): boolean => {
+    if (!data.dataInicioBimestre || !data.dataFimBimestre) return true;
+    const iniBim = data.dataInicioBimestre;
+    const fimBim = data.dataFimBimestre;
+    const dtFim = f.dataFim || f.data;
+    // Sobreposição de intervalos: max(ini1, ini2) <= min(fim1, fim2)
+    return f.data <= fimBim && dtFim >= iniBim;
+  };
+
+  // Eventos filtrados pela preferência de exibição (Bimestre Selecionado vs Todos do Ano)
+  const eventosExibidos = useMemo(() => {
+    if (verTodosEventosAno) {
+      return [...feriados].sort((a, b) => a.data.localeCompare(b.data));
+    }
+    return feriados
+      .filter(eventoPertenceAoBimestreAtual)
+      .sort((a, b) => a.data.localeCompare(b.data));
+  }, [feriados, verTodosEventosAno, data.dataInicioBimestre, data.dataFimBimestre]);
+
+  const totalEventosNoBimestreAtual = useMemo(() => {
+    return feriados.filter(eventoPertenceAoBimestreAtual).length;
+  }, [feriados, data.dataInicioBimestre, data.dataFimBimestre]);
 
   const calculoAtual = calcularAulasPrevistas(
     data.dataInicioBimestre,
@@ -718,9 +834,20 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
 
       {/* Bimestre e Calendário do Período */}
       <div className="bg-slate-50/70 border border-slate-200 rounded-xl p-4">
-        <label className="block text-xs font-bold text-slate-700 uppercase mb-2">
-          Período do Bimestre (Define o intervalo de contagem das aulas):
-        </label>
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+          <label className="block text-xs font-bold text-slate-700 uppercase">
+            Período do Bimestre (Define o intervalo de contagem das aulas):
+          </label>
+          <button
+            type="button"
+            onClick={() => setModalBimestresAberto(true)}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition-colors shadow-2xs"
+            title="Visualizar e configurar datas de início e término dos 4 bimestres do ano letivo"
+          >
+            <CalendarRange className="w-3.5 h-3.5 text-sky-600" />
+            <span>Configurar os 4 Bimestres</span>
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label className="block text-[11px] font-semibold text-slate-500 uppercase mb-1">
@@ -728,7 +855,7 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
             </label>
             <select
               value={data.bimestre}
-              onChange={(e) => onChange("bimestre", e.target.value)}
+              onChange={(e) => handleBimestreChange(e.target.value)}
               className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all text-sm font-medium"
             >
               <option value="">Selecione o Bimestre...</option>
@@ -737,7 +864,6 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
               <option value="3º Bimestre">3º Bimestre</option>
               <option value="4º Bimestre">4º Bimestre</option>
             </select>
-
           </div>
 
           <div>
@@ -747,7 +873,7 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
             <input
               type="date"
               value={data.dataInicioBimestre}
-              onChange={(e) => onChange("dataInicioBimestre", e.target.value)}
+              onChange={(e) => handleDataInicioChange(e.target.value)}
               className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all text-sm"
             />
           </div>
@@ -759,12 +885,114 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
             <input
               type="date"
               value={data.dataFimBimestre}
-              onChange={(e) => onChange("dataFimBimestre", e.target.value)}
+              onChange={(e) => handleDataFimChange(e.target.value)}
               className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all text-sm"
             />
           </div>
         </div>
       </div>
+
+      {/* MODAL PARA CONFIGURAR AS DATAS DOS 4 BIMESTRES */}
+      {modalBimestresAberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-sky-100 text-sky-700 rounded-lg">
+                  <CalendarRange className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800">
+                    Calendário dos 4 Bimestres do Ano Letivo
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Defina o período de cada bimestre para preenchimento e filtros automáticos.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalBimestresAberto(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                title="Fechar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-3.5 max-h-[70vh] overflow-y-auto">
+              {(["1º Bimestre", "2º Bimestre", "3º Bimestre", "4º Bimestre"] as const).map((bimNome) => {
+                const periodo = calendarioEfetivo[bimNome] || { inicio: "", fim: "" };
+                const isAtivo = data.bimestre === bimNome;
+
+                return (
+                  <div
+                    key={bimNome}
+                    className={`p-3.5 rounded-xl border transition-colors ${
+                      isAtivo
+                        ? "bg-sky-50/50 border-sky-300 ring-1 ring-sky-300"
+                        : "bg-white border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-800">{bimNome}</span>
+                        {isAtivo && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-sky-600 text-white rounded-full">
+                            Bimestre Ativo
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-slate-400">
+                        {periodo.inicio && periodo.fim ? "Definido" : "Pendente"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-500 uppercase mb-1">
+                          Início
+                        </label>
+                        <input
+                          type="date"
+                          value={periodo.inicio}
+                          onChange={(e) =>
+                            handleSalvarPeriodoBimestreModal(bimNome, "inicio", e.target.value)
+                          }
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-500 uppercase mb-1">
+                          Término
+                        </label>
+                        <input
+                          type="date"
+                          value={periodo.fim}
+                          onChange={(e) =>
+                            handleSalvarPeriodoBimestreModal(bimNome, "fim", e.target.value)
+                          }
+                          className="w-full px-2.5 py-1.5 border border-slate-300 bg-white rounded-lg text-slate-800 text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setModalBimestresAberto(false)}
+                className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold transition-colors shadow-xs"
+              >
+                Concluir e Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* EVENTOS ESCOLARES E CALENDÁRIO DO BIMESTRE */}
       <div className="border border-indigo-200 bg-indigo-50/20 rounded-xl p-5 space-y-3.5">
@@ -777,13 +1005,39 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                 <span>Eventos Escolares e Calendário do Bimestre</span>
                 <span className="text-[11px] font-semibold px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-full">
-                  {feriados.length} cadastrado(s)
+                  {totalEventosNoBimestreAtual} no {data.bimestre || "bimestre"} ({feriados.length} no ano)
                 </span>
               </h3>
               <p className="text-xs text-slate-500">
                 Cadastre feriados e dias sem aula (não entram na contagem de aulas) ou eventos escolares (que contam normalmente na carga horária).
               </p>
             </div>
+          </div>
+
+          {/* Seletor de visualização (Deste Bimestre vs Todos do Ano) */}
+          <div className="inline-flex items-center p-0.5 bg-white border border-slate-200 rounded-lg shadow-2xs text-xs">
+            <button
+              type="button"
+              onClick={() => setVerTodosEventosAno(false)}
+              className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
+                !verTodosEventosAno
+                  ? "bg-indigo-600 text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Eventos deste Bimestre ({totalEventosNoBimestreAtual})
+            </button>
+            <button
+              type="button"
+              onClick={() => setVerTodosEventosAno(true)}
+              className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
+                verTodosEventosAno
+                  ? "bg-indigo-600 text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Todos do Ano ({feriados.length})
+            </button>
           </div>
         </div>
 
@@ -855,10 +1109,10 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
         </div>
 
         {/* Lista de Eventos Cadastrados */}
-        {feriados && feriados.length > 0 ? (
+        {eventosExibidos && eventosExibidos.length > 0 ? (
           <div className="space-y-1.5 pt-1">
             <div className="flex flex-wrap gap-2">
-              {feriados.map((f) => {
+              {eventosExibidos.map((f) => {
                 const formatBRShort = (dt: string) => {
                   const [y, m, d] = dt.split("-");
                   return y && m && d ? `${d}/${m}` : dt;
@@ -870,6 +1124,7 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
                   : formatBRShort(f.data);
 
                 const isLetivo = f.tipo === "letivo";
+                const bimDetectado = identificarBimestreDoEvento(f.data);
 
                 return (
                   <span
@@ -887,6 +1142,11 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
                     <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-slate-100 text-slate-600 border border-slate-200/80">
                       {isLetivo ? "Letivo" : "Sem aula"}
                     </span>
+                    {bimDetectado && (
+                      <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+                        {bimDetectado}
+                      </span>
+                    )}
                     <button
                       type="button"
                       onClick={() => handleRemoveFeriado(f.id)}
@@ -903,13 +1163,13 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
             {/* Resumo dinâmico de eventos */}
             <div className="flex items-center gap-4 text-[11px] text-slate-500 pt-1">
               <span>
-                • Dias não letivos descontados:{" "}
+                • Dias não letivos descontados no bimestre:{" "}
                 <strong className="text-rose-600 font-bold">
                   {calculoAtual.feriadosDescontados} dia(s)
                 </strong>
               </span>
               <span>
-                • Eventos escolares letivos:{" "}
+                • Eventos escolares letivos no bimestre:{" "}
                 <strong className="text-emerald-700 font-bold">
                   {calculoAtual.eventosLetivosTotais} evento(s)
                 </strong>
@@ -918,7 +1178,9 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
           </div>
         ) : (
           <p className="text-xs text-slate-400 italic">
-            Nenhum evento ou feriado cadastrado para este bimestre.
+            {verTodosEventosAno
+              ? "Nenhum evento ou feriado cadastrado para o ano letivo."
+              : `Nenhum evento ou feriado cadastrado para o ${data.bimestre || "bimestre selecionado"}.`}
           </p>
         )}
       </div>

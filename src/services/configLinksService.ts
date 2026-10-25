@@ -4,6 +4,7 @@ import { limparNomeComponente, normalizarTexto } from "./googleSheetsService";
 
 export interface PlanilhasLinksConfig {
   recuperacaoDiagnostica?: string;
+  recuperacaoDiagnosticaAnterior?: string;
   socioemocionais?: string;
   metodologias?: string;
   avaliacao?: string;
@@ -35,6 +36,7 @@ export const STORAGE_KEYS = {
   CONFIG_JSON: "planejador_configuracao_links_json",
   DADOS_AULA: "planejador_aula_dados_v1",
   DIAGNOSTICO: "planejador_url_planilha_diagnostico",
+  DIAGNOSTICO_ANTERIOR: "planejador_url_planilha_diagnostico_anterior",
   CURRICULO: "planejador_url_planilha_curriculo",
   SOCIOEMOCIONAL: "planejador_url_planilha_socioemocional",
   METODOLOGIAS: "planejador_url_planilha_metodologias",
@@ -229,6 +231,7 @@ export function gerarBackupCompleto(dadosAtuais: LessonPlanState): BackupComplet
   return {
     planilhas: {
       recuperacaoDiagnostica: localStorage.getItem(STORAGE_KEYS.DIAGNOSTICO) || "",
+      recuperacaoDiagnosticaAnterior: localStorage.getItem(STORAGE_KEYS.DIAGNOSTICO_ANTERIOR) || "",
       socioemocionais: localStorage.getItem(STORAGE_KEYS.SOCIOEMOCIONAL) || "",
       metodologias: localStorage.getItem(STORAGE_KEYS.METODOLOGIAS) || "",
       avaliacao: localStorage.getItem(STORAGE_KEYS.AVALIACAO) || "",
@@ -258,6 +261,9 @@ export function restaurarBackupCompleto(
   if (planilhas) {
     if (planilhas.recuperacaoDiagnostica) {
       localStorage.setItem(STORAGE_KEYS.DIAGNOSTICO, planilhas.recuperacaoDiagnostica.trim());
+    }
+    if (planilhas.recuperacaoDiagnosticaAnterior) {
+      localStorage.setItem(STORAGE_KEYS.DIAGNOSTICO_ANTERIOR, planilhas.recuperacaoDiagnosticaAnterior.trim());
     }
     if (planilhas.socioemocionais) {
       localStorage.setItem(STORAGE_KEYS.SOCIOEMOCIONAL, planilhas.socioemocionais.trim());

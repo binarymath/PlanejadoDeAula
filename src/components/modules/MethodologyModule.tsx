@@ -38,6 +38,8 @@ export const MethodologyModule: React.FC<MethodologyModuleProps> = ({
   const [selecionadasNomes, setSelecionadasNomes] = useState<Set<string>>(new Set());
   const [busca, setBusca] = useState<string>("");
   const [modalidadeFiltro, setModalidadeFiltro] = useState<string>("TODAS");
+  const [autorFiltro, setAutorFiltro] = useState<string>("TODOS");
+  const [livroFiltro, setLivroFiltro] = useState<string>("TODOS");
   const [itemVisualizando, setItemVisualizando] = useState<MetodologiaAtivaItem | null>(null);
   const [painelAberto, setPainelAberto] = useState<boolean>(true);
   const [carregando, setCarregando] = useState<boolean>(false);
@@ -98,9 +100,24 @@ export const MethodologyModule: React.FC<MethodologyModuleProps> = ({
     ...Array.from(new Set(metodologias.map((m) => m.modalidadeRecomendada).filter(Boolean))),
   ];
 
-  // Itens filtrados pela busca e pelo filtro de modalidade
+  // Lista de autores disponíveis para o filtro rápido
+  const autoresDisponiveis = [
+    "TODOS",
+    ...Array.from(new Set(metodologias.map((m) => m.autorReferencia?.trim()).filter(Boolean))).sort(),
+  ];
+
+  // Lista de livros / obras de referência disponíveis para o filtro rápido
+  const livrosDisponiveis = [
+    "TODOS",
+    ...Array.from(new Set(metodologias.map((m) => m.categoriaReferencia?.trim()).filter(Boolean))).sort(),
+  ];
+
+  // Itens filtrados pela busca e pelos filtros de modalidade, autor e livro
   const itensFiltrados = metodologias.filter((m) => {
     const matchMod = modalidadeFiltro === "TODAS" || m.modalidadeRecomendada === modalidadeFiltro;
+    const matchAutor = autorFiltro === "TODOS" || m.autorReferencia?.trim() === autorFiltro;
+    const matchLivro = livroFiltro === "TODOS" || m.categoriaReferencia?.trim() === livroFiltro;
+
     const termo = busca.toLowerCase();
     const matchBusca =
       !termo ||
@@ -109,7 +126,8 @@ export const MethodologyModule: React.FC<MethodologyModuleProps> = ({
       m.autorReferencia.toLowerCase().includes(termo) ||
       m.definicaoDescricao.toLowerCase().includes(termo) ||
       m.modalidadeRecomendada.toLowerCase().includes(termo);
-    return matchMod && matchBusca;
+
+    return matchMod && matchAutor && matchLivro && matchBusca;
   });
 
   // Agrupamento dos itens por Modalidade Recomendada (Coluna de Modalidade)
@@ -252,41 +270,93 @@ export const MethodologyModule: React.FC<MethodologyModuleProps> = ({
         {painelAberto && planilhaConectada && (
           <div className="p-4 space-y-4">
             {/* Barra de Filtro e Busca */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-              <div className="flex-1 relative">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
-                <input
-                  type="text"
-                  value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
-                  placeholder="Buscar metodologia, autor, descrição ou modalidade..."
-                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] font-medium text-slate-500 hidden sm:inline">Filtrar por Destinatário:</span>
-                  <select
-                    value={modalidadeFiltro}
-                    onChange={(e) => setModalidadeFiltro(e.target.value)}
-                    className="px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none"
-                  >
-                    {modalidadesDisponiveis.map((m) => (
-                      <option key={m} value={m}>
-                        {m === "TODAS" ? "Todas as Modalidades" : m}
-                      </option>
-                    ))}
-                  </select>
+            <div className="space-y-2.5">
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
+                <div className="flex-1 relative">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={busca}
+                    onChange={(e) => setBusca(e.target.value)}
+                    placeholder="Buscar metodologia, autor, livro ou descrição..."
+                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  />
                 </div>
 
                 {selecionadasNomes.size > 0 && (
                   <button
                     type="button"
                     onClick={handleClearAll}
-                    className="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-500 rounded text-[11px] font-semibold transition-colors flex-shrink-0"
+                    className="px-2.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-500 rounded-lg text-[11px] font-semibold transition-colors flex-shrink-0 self-start md:self-auto"
                   >
-                    Desmarcar
+                    Desmarcar Todas ({selecionadasNomes.size})
+                  </button>
+                )}
+              </div>
+
+              {/* Linha de Filtros Dinâmicos (Destinatário, Autor e Livro) */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                {/* Filtro por Destinatário / Modalidade */}
+                <div className="flex items-center gap-1.5 bg-white border border-slate-300 rounded-lg px-2.5 py-1 shadow-2xs">
+                  <span className="text-[11px] font-medium text-slate-500 whitespace-nowrap">Destinatário:</span>
+                  <select
+                    value={modalidadeFiltro}
+                    onChange={(e) => setModalidadeFiltro(e.target.value)}
+                    className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer max-w-[140px] truncate"
+                  >
+                    {modalidadesDisponiveis.map((m) => (
+                      <option key={m} value={m}>
+                        {m === "TODAS" ? "Todos os Destinatários" : m}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Filtro por Autor */}
+                <div className="flex items-center gap-1.5 bg-white border border-slate-300 rounded-lg px-2.5 py-1 shadow-2xs">
+                  <span className="text-[11px] font-medium text-slate-500 whitespace-nowrap">Autor:</span>
+                  <select
+                    value={autorFiltro}
+                    onChange={(e) => setAutorFiltro(e.target.value)}
+                    className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer max-w-[170px] truncate"
+                  >
+                    {autoresDisponiveis.map((a) => (
+                      <option key={a} value={a}>
+                        {a === "TODOS" ? "Todos os Autores" : a}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Filtro por Livro / Obra */}
+                <div className="flex items-center gap-1.5 bg-white border border-slate-300 rounded-lg px-2.5 py-1 shadow-2xs flex-1 min-w-[200px]">
+                  <span className="text-[11px] font-medium text-slate-500 whitespace-nowrap">Livro / Obra:</span>
+                  <select
+                    value={livroFiltro}
+                    onChange={(e) => setLivroFiltro(e.target.value)}
+                    className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer w-full truncate"
+                  >
+                    {livrosDisponiveis.map((l) => (
+                      <option key={l} value={l}>
+                        {l === "TODOS" ? "Todos os Livros" : l}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Reset rápido de filtros se algum estiver ativo */}
+                {(modalidadeFiltro !== "TODAS" || autorFiltro !== "TODOS" || livroFiltro !== "TODOS" || busca) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalidadeFiltro("TODAS");
+                      setAutorFiltro("TODOS");
+                      setLivroFiltro("TODOS");
+                      setBusca("");
+                    }}
+                    className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 hover:underline px-1 py-0.5 whitespace-nowrap"
+                  >
+                    Limpar Filtros
                   </button>
                 )}
               </div>
@@ -341,9 +411,17 @@ export const MethodologyModule: React.FC<MethodologyModuleProps> = ({
                               className="flex-1 min-w-0 cursor-pointer"
                             >
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs font-bold text-slate-900 leading-snug">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setItemVisualizando(item);
+                                  }}
+                                  className="text-xs font-bold text-slate-900 hover:text-blue-700 hover:underline leading-snug text-left transition-colors cursor-pointer"
+                                  title="Clique para ver o card completo"
+                                >
                                   {item.metodologiaAtiva}
-                                </span>
+                                </button>
                                 {item.categoriaReferencia && (
                                   <span className="text-[10px] font-medium bg-blue-100/70 text-blue-800 px-1.5 py-0.2 rounded">
                                     {item.categoriaReferencia}

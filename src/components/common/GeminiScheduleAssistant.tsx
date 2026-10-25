@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Sparkles,
   Send,
@@ -22,7 +22,6 @@ import {
   COLUNAS_CURRICULO_DISPONIVEIS,
   ChatMensagem,
   obterGeminiApiKey,
-  salvarGeminiApiKey,
   conversarComGeminiCronograma,
 } from "../../services/geminiScheduleService";
 import { AulaCurriculoItem } from "../../services/curriculumService";
@@ -46,37 +45,24 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
   onColunaChange,
   onAplicarCronograma,
 }) => {
-  const [apiKey, setApiKey] = useState<string>(obterGeminiApiKey());
-  const [mostrarConfigKey, setMostrarConfigKey] = useState<boolean>(!obterGeminiApiKey());
-  const [inputKey, setInputKey] = useState<string>(obterGeminiApiKey());
+  const [apiKey, setApiKey] = useState<string>(() => obterGeminiApiKey());
   const [mensagens, setMensagens] = useState<ChatMensagem[]>([]);
   const [inputTexto, setInputTexto] = useState<string>("");
   const [carregando, setCarregando] = useState<boolean>(false);
   const [ultimoCronogramaGerado, setUltimoCronogramaGerado] = useState<string | null>(null);
   const [copiadoSucesso, setCopiadoSucesso] = useState<boolean>(false);
-  const [salvoComSucesso, setSalvoComSucesso] = useState<boolean>(false);
 
-  // Salvar chave de API
-  const handleSalvarKey = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const chaveLimpa = inputKey.trim();
-    salvarGeminiApiKey(chaveLimpa);
-    setApiKey(chaveLimpa);
-    if (chaveLimpa) {
-      setSalvoComSucesso(true);
-      setTimeout(() => {
-        setSalvoComSucesso(false);
-        setMostrarConfigKey(false);
-      }, 1500);
-    }
-  };
-
-  const handleRemoverKey = () => {
-    salvarGeminiApiKey("");
-    setApiKey("");
-    setInputKey("");
-    setMostrarConfigKey(true);
-  };
+  useEffect(() => {
+    const atualizar = () => {
+      setApiKey(obterGeminiApiKey());
+    };
+    window.addEventListener("storage", atualizar);
+    window.addEventListener("focus", atualizar);
+    return () => {
+      window.removeEventListener("storage", atualizar);
+      window.removeEventListener("focus", atualizar);
+    };
+  }, []);
 
   // Enviar mensagem para o Gemini
   const handleEnviarMensagem = async (textoPersonalizado?: string) => {
@@ -84,7 +70,7 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
     if (!textoParaEnviar || carregando) return;
 
     if (!apiKey) {
-      setMostrarConfigKey(true);
+      alert("Por favor, configure sua Chave de API do Gemini no botão 'Configurar API Gemini' no topo da página.");
       return;
     }
 
@@ -152,7 +138,7 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
 
   return (
     <div className="bg-gradient-to-br from-sky-50/60 to-indigo-50/40 border border-sky-200/80 rounded-xl p-5 space-y-4">
-      {/* Barra de Título e Configuração de Chave */}
+      {/* Barra de Título */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-sky-100 pb-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 text-white flex items-center justify-center shadow-sm shadow-sky-600/30">
@@ -168,7 +154,7 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
           </div>
         </div>
 
-        {/* Status e Botão da Chave */}
+        {/* Status da IA */}
         <div className="flex items-center gap-2">
           {apiKey ? (
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-semibold shadow-2xs">
@@ -176,133 +162,15 @@ export const GeminiScheduleAssistant: React.FC<GeminiScheduleAssistantProps> = (
               <span>Sincronizado ✔</span>
               <span className="text-slate-300">|</span>
               <span className="text-emerald-700 font-normal">IA Pronta</span>
-              <button
-                type="button"
-                onClick={() => setMostrarConfigKey(!mostrarConfigKey)}
-                className="text-[11px] underline text-emerald-700 hover:text-emerald-900 ml-1 font-semibold"
-                title="Configurações da Chave"
-              >
-                {mostrarConfigKey ? "Fechar" : "Alterar"}
-              </button>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => setMostrarConfigKey(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all"
-            >
-              <Key className="w-3.5 h-3.5" />
-              <span>Ativar IA (Inserir Chave)</span>
-            </button>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-xs font-medium">
+              <span>Chave Gemini não configurada (configure no topo do sistema)</span>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Área Intuitiva de Configuração da Chave da API */}
-      {mostrarConfigKey && (
-        <div className="p-4 sm:p-5 bg-sky-50/70 border-b border-sky-200/80 rounded-xl animate-in fade-in duration-200">
-          <div className="max-w-2xl bg-white p-4 rounded-xl border border-sky-200 shadow-2xs space-y-3">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wide">
-                  <Lock className="w-3.5 h-3.5 text-sky-600" />
-                  Chave da API do Google Gemini
-                </h4>
-                <p className="text-xs text-slate-600 mt-0.5">
-                  A chave é gratuita e gerada pelo Google AI Studio. Fica salva apenas no seu navegador.
-                </p>
-              </div>
-              {apiKey && (
-                <button
-                  type="button"
-                  onClick={() => setMostrarConfigKey(false)}
-                  className="text-xs text-slate-400 hover:text-slate-600 font-medium"
-                >
-                  Fechar
-                </button>
-              )}
-            </div>
-
-            <form onSubmit={handleSalvarKey} className="space-y-2">
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className="relative flex-1">
-                  <input
-                    type="password"
-                    value={inputKey}
-                    onChange={(e) => {
-                      setInputKey(e.target.value);
-                      if (salvoComSucesso) setSalvoComSucesso(false);
-                    }}
-                    placeholder="Cole sua chave aqui (começa com AIzaSy...)"
-                    className="w-full px-3 py-2 pr-9 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  />
-                  {apiKey && apiKey === inputKey.trim() && (
-                    <span
-                      title="Chave sincronizada e ativa"
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center text-emerald-600 font-bold"
-                    >
-                      <Check className="w-4 h-4 stroke-[3]" />
-                    </span>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={!inputKey.trim()}
-                  className={`px-4 py-2 text-white rounded-lg text-xs font-bold transition-all whitespace-nowrap shadow-2xs flex items-center justify-center gap-1.5 ${
-                    salvoComSucesso
-                      ? "bg-emerald-600 hover:bg-emerald-700"
-                      : "bg-sky-600 hover:bg-sky-700 disabled:opacity-50"
-                  }`}
-                >
-                  {salvoComSucesso ? (
-                    <>
-                      <Check className="w-4 h-4 stroke-[3]" />
-                      <span>Sincronizado ✔</span>
-                    </>
-                  ) : (
-                    <span>Salvar Chave</span>
-                  )}
-                </button>
-
-                {apiKey && (
-                  <button
-                    type="button"
-                    onClick={handleRemoverKey}
-                    title="Remover chave salva"
-                    className="p-2 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors flex items-center justify-center"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </form>
-
-            <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-1.5 text-slate-600">
-                <span>Onde obter a chave:</span>
-                <a
-                  href="https://aistudio.google.com/app/apikey"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 font-semibold text-sky-600 hover:text-sky-800 hover:underline"
-                >
-                  <span>Google AI Studio</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-                <span className="text-slate-400 text-[11px]">(Clique em "Create API Key")</span>
-              </div>
-
-              {apiKey && (
-                <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  <Check className="w-3.5 h-3.5 stroke-[3] text-emerald-600" />
-                  <span>Sincronizado ✔</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Seletor da Coluna da Planilha de Objetos de Conhecimento - Exibido apenas após conexão */}
       {aulasCurriculo.length > 0 ? (

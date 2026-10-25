@@ -30,9 +30,8 @@ export function normalizarGoogleSheetsXlsxUrl(rawUrl: string): string {
   return trimmed;
 }
 
-// Cache em memória do workbook completo baixado para não fazer requisições repetidas
-let cachedWorkbook: XLSX.WorkBook | null = null;
-let cachedWorkbookUrl: string = "";
+// Cache em memória de workbooks por URL normalizada para suportar múltiplas planilhas simultâneas
+const workbookCache = new Map<string, XLSX.WorkBook>();
 
 /**
  * Baixa e armazena em cache o XLSX completo da planilha caso configurada
@@ -43,8 +42,8 @@ export async function getGoogleWorkbook(customUrl?: string): Promise<XLSX.WorkBo
     return null;
   }
 
-  if (cachedWorkbook && cachedWorkbookUrl === targetUrl) {
-    return cachedWorkbook;
+  if (workbookCache.has(targetUrl)) {
+    return workbookCache.get(targetUrl)!;
   }
 
   // Tenta baixar via fetch
@@ -54,9 +53,9 @@ export async function getGoogleWorkbook(customUrl?: string): Promise<XLSX.WorkBo
   }
 
   const arrayBuffer = await response.arrayBuffer();
-  cachedWorkbook = XLSX.read(arrayBuffer, { type: "array" });
-  cachedWorkbookUrl = targetUrl;
-  return cachedWorkbook;
+  const wb = XLSX.read(arrayBuffer, { type: "array" });
+  workbookCache.set(targetUrl, wb);
+  return wb;
 }
 
 /**
@@ -195,6 +194,78 @@ export async function obterTurmasDaPlanilhaDiagnostico(
   });
 
   return Array.from(turmasSet).sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
+/**
+ * Informações de mapeamento da turma diagnóstica
+ */
+export interface InfoTurmaHistorica {
+  turmaAtual: string;            // ex: "7A"
+  turmaHistorica: string;        // ex: "6A" no 1º Bimestre; "7A" nos demais
+  nivelHistorico: string | null; // ex: "6"
+  isFundamental1: boolean;       // true se for 6º ano no 1º bimestre (transição)
+  motivoAviso?: string;          // Mensagem pedagógica quando não há dados (6º ano)
+}
+
+/**
+ * Calcula a turma e nível histórico alvo:
+ * - No 1º Bimestre:
+ *   - 7º Ano (ex: 7A) -> busca o 6º Ano (6A), pois os alunos estavam no 6º ano no ano anterior
+ *   - 8º Ano (ex: 8A) -> busca o 7º Ano (7A)
+ *   - 9º Ano (ex: 9A) -> busca o 8º Ano (8A)
+ *   - 6º Ano (ex: 6A) -> os alunos vieram do 5º Ano (Fundamental I) e não há dados na planilha dos Anos Finais
+ * - Nos 2º, 3º e 4º Bimestres:
+ *   - Mantém a mesma turma (6A busca 6A, 7A busca 7A) para recuperação contínua do bimestre anterior
+ */
+export function obterTurmaHistoricaAlvo(
+  turmaAtualPadronizada: string,
+  bimestreAtual: string
+): InfoTurmaHistorica {
+  const t = (turmaAtualPadronizada || "").trim().toUpperCase();
+  const b = bimestreAtual || "1º Bimestre";
+  const isPrimeiroBimestre = b.includes("1");
+
+  if (!isPrimeiroBimestre) {
+    return {
+      turmaAtual: t,
+      turmaHistorica: t,
+      nivelHistorico: extrairNivelEscolar(t),
+      isFundamental1: false,
+    };
+  }
+
+  // 1º Bimestre: Coorte histórica dos alunos no ano letivo anterior
+  const nivel = extrairNivelEscolar(t); // ex: "7", "6"
+  const letra = extrairLetraTurma(t) || "A";
+
+  if (nivel === "6") {
+    // 6º Ano: no ano anterior estavam no 5º Ano (Fundamental I)
+    return {
+      turmaAtual: t,
+      turmaHistorica: `5${letra}`,
+      nivelHistorico: "5",
+      isFundamental1: true,
+      motivoAviso: `Os estudantes do ${t || "6º Ano"} ingressaram recentemente no Ensino Fundamental II (Anos Finais) vindos do 5º Ano (Fundamental I). Como a planilha diagnóstica da escola contempla turmas do 6º ao 9º ano, não há dados históricos do 5º Ano cadastrados. Realize uma sondagem diagnóstica inicial em sala de aula e anote os descritores diretamente no campo de texto abaixo.`,
+    };
+  }
+
+  if (nivel && parseInt(nivel, 10) > 6) {
+    const nivelAnterior = String(parseInt(nivel, 10) - 1);
+    const turmaAnterior = `${nivelAnterior}${letra}`;
+    return {
+      turmaAtual: t,
+      turmaHistorica: turmaAnterior,
+      nivelHistorico: nivelAnterior,
+      isFundamental1: false,
+    };
+  }
+
+  return {
+    turmaAtual: t,
+    turmaHistorica: t,
+    nivelHistorico: nivel,
+    isFundamental1: false,
+  };
 }
 
 /**

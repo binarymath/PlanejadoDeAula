@@ -27,6 +27,25 @@ export interface FeriadoExcecao {
 
 export type EventoEscolar = FeriadoExcecao;
 
+export interface PeriodoBimestre {
+  inicio: string; // YYYY-MM-DD
+  fim: string;    // YYYY-MM-DD
+}
+
+export type CalendarioBimestres = Record<
+  "1º Bimestre" | "2º Bimestre" | "3º Bimestre" | "4º Bimestre",
+  PeriodoBimestre
+> & {
+  [bimestre: string]: PeriodoBimestre;
+};
+
+export const CALENDARIO_BIMESTRES_PADRAO: CalendarioBimestres = {
+  "1º Bimestre": { inicio: "2026-02-02", fim: "2026-04-24" },
+  "2º Bimestre": { inicio: "2026-04-27", fim: "2026-07-03" },
+  "3º Bimestre": { inicio: "2026-07-27", fim: "2026-10-02" },
+  "4º Bimestre": { inicio: "2026-10-05", fim: "2026-12-18" },
+};
+
 export interface LessonPlanState {
   // Dados da Escola
   nomeEscola: string;
@@ -42,6 +61,9 @@ export interface LessonPlanState {
   dataFimBimestre: string;
   aulasPrevistas: string;
   controleFrequencia: string;
+
+  // Calendário com os períodos dos 4 bimestres
+  calendarioBimestres?: CalendarioBimestres;
 
   // Estrutura Dinâmica de Múltiplas Turmas e Calendário
   turmas: TurmaPlanejada[];
@@ -78,6 +100,7 @@ export const initialLessonPlanState: LessonPlanState = {
   dataFimBimestre: "",
   aulasPrevistas: "",
   controleFrequencia: "",
+  calendarioBimestres: CALENDARIO_BIMESTRES_PADRAO,
   turmas: initialTurmas,
   feriadosExcecoes: [],
   aprendizagensNaoConsolidadas: "",
