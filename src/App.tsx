@@ -18,6 +18,7 @@ import {
   Menu,
   X,
   FileJson,
+  Sparkles,
 } from "lucide-react";
 
 import { LessonPlanState, initialLessonPlanState } from "./types/lessonPlan";
@@ -33,6 +34,7 @@ import { ScheduleModule } from "./components/modules/ScheduleModule";
 import { MethodologyModule } from "./components/modules/MethodologyModule";
 import { EvaluationModule } from "./components/modules/EvaluationModule";
 import { ReferencesModule } from "./components/modules/ReferencesModule";
+import { AssessmentModule } from "./components/modules/AssessmentModule";
 import { DocumentPreviewModal } from "./components/common/DocumentPreviewModal";
 import { ConfigLinksModal } from "./components/common/ConfigLinksModal";
 
@@ -101,6 +103,7 @@ export const App: React.FC = () => {
     { id: "metodologia", title: "6. Metodologias", icon: Zap },
     { id: "avaliacao", title: "7. Avaliação", icon: Award },
     { id: "referencias", title: "8. Referências", icon: Library },
+    { id: "sugestaoAvaliacao", title: "Sugestão de Avaliação", icon: Sparkles, badge: "IA" },
   ];
 
   const handleDownload = async () => {
@@ -320,6 +323,9 @@ export const App: React.FC = () => {
             )}
             {activeTab === "referencias" && (
               <ReferencesModule data={data} onChange={handleFieldChange} />
+            )}
+            {activeTab === "sugestaoAvaliacao" && (
+              <AssessmentModule data={data} />
             )}
           </div>
 

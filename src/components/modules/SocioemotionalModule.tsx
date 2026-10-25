@@ -9,6 +9,8 @@ import {
   Link,
   RefreshCw,
   CheckCircle2,
+  Info,
+  X,
 } from "lucide-react";
 import { LessonPlanState } from "../../types/lessonPlan";
 import {
@@ -29,6 +31,7 @@ export const SocioemotionalModule: React.FC<SocioemotionalModuleProps> = ({
 }) => {
   const [blocosSelecionados, setBlocosSelecionados] = useState<Set<string>>(new Set());
   const [painelAberto, setPainelAberto] = useState<boolean>(true);
+  const [modalBloco, setModalBloco] = useState<MacrocompetenciaSocioemocional | null>(null);
   const [urlPlanilha, setUrlPlanilha] = useState<string>(() => {
     return localStorage.getItem(STORAGE_KEY_URL_SOCIOEMOCIONAL) || "";
   });
@@ -246,9 +249,18 @@ export const SocioemotionalModule: React.FC<SocioemotionalModuleProps> = ({
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900">
-                          {bloco.nome}
-                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setModalBloco(bloco);
+                          }}
+                          className="text-xs font-bold text-sky-800 hover:text-sky-600 hover:underline flex items-center gap-1.5 transition-colors text-left group"
+                          title="Clique para ver explicação detalhada"
+                        >
+                          <span>{bloco.nome}</span>
+                          <Info className="w-3.5 h-3.5 text-sky-500 group-hover:scale-110 transition-transform flex-shrink-0" />
+                        </button>
                       </div>
 
                       <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
@@ -275,6 +287,126 @@ export const SocioemotionalModule: React.FC<SocioemotionalModuleProps> = ({
           </div>
         )}
       </div>
+
+      {/* Modal de Detalhes da Competência Socioemocional */}
+      {modalBloco && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150 print:hidden"
+          onClick={() => setModalBloco(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Cabeçalho do Modal */}
+            <div className="bg-gradient-to-r from-sky-600 to-indigo-600 px-6 py-5 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
+                  <HeartHandshake className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-semibold tracking-wider uppercase text-sky-200">
+                    Competência Socioemocional
+                  </span>
+                  <h3 className="text-lg font-bold text-white leading-tight">
+                    {modalBloco.nome}
+                  </h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalBloco(null)}
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/25 text-white/90 hover:text-white transition-colors"
+                title="Fechar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Conteúdo do Modal */}
+            <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+              {/* Definição Geral */}
+              <div className="bg-sky-50/70 border border-sky-100 rounded-xl p-4">
+                <h4 className="text-xs font-bold text-sky-900 uppercase tracking-wide mb-1 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                  Conceito Geral
+                </h4>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  {modalBloco.descricaoCurta}
+                </p>
+              </div>
+
+              {/* Dimensões / Habilidades Específicas */}
+              <div>
+                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                  Dimensões e Atitudes Observáveis ({modalBloco.habilidades.length})
+                </h4>
+                <div className="space-y-2.5">
+                  {modalBloco.habilidades.map((hab, index) => (
+                    <div
+                      key={index}
+                      className="p-3 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-sky-300 hover:shadow-xs transition-all"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="w-5 h-5 rounded-full bg-sky-100 text-sky-700 font-bold text-[11px] flex items-center justify-center flex-shrink-0">
+                          {index + 1}
+                        </span>
+                        <h5 className="text-xs font-bold text-slate-900">
+                          {hab.nome}
+                        </h5>
+                      </div>
+                      <p className="text-xs text-slate-600 pl-7 leading-relaxed">
+                        {hab.definicao}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Dica Pedagógica */}
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-[11px] text-slate-500 leading-relaxed">
+                <span className="font-semibold text-slate-700">Como aplicar no planejamento: </span>
+                Mobilize essas dimensões durante as atividades em sala (trabalho em equipe, prazos, resolução de problemas ou debates), promovendo a reflexão e o protagonismo dos estudantes.
+              </div>
+            </div>
+
+            {/* Rodapé do Modal */}
+            <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  handleToggleBloco(modalBloco);
+                }}
+                className={`text-xs font-semibold px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
+                  blocosSelecionados.has(modalBloco.id)
+                    ? "bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
+                    : "bg-sky-600 text-white hover:bg-sky-700 shadow-xs"
+                }`}
+              >
+                {blocosSelecionados.has(modalBloco.id) ? (
+                  <>
+                    <Square className="w-3.5 h-3.5" />
+                    <span>Remover da Seleção</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckSquare className="w-3.5 h-3.5" />
+                    <span>Selecionar no Planejamento</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setModalBloco(null)}
+                className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Caixa de Texto que migra para o DOCX */}
       <div>

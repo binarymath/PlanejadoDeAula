@@ -112,13 +112,29 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
     const textoAtual = data.objetosConhecimento || "";
     const novosIds = new Set<string>();
     gruposAE.forEach((g) => {
+      // Verifica se a string bruta da AE está presente
       if (textoAtual.includes(g.aprendizagemEssencial)) {
         novosIds.add(g.id);
+        return;
+      }
+      // Verifica se o formato gerado [AE...]: título está presente
+      const matchAE = g.aprendizagemEssencial.match(/^(AE\s*\d+)\s*[-–:]\s*(.*)$/i);
+      if (matchAE) {
+        const tag = `[${matchAE[1].toUpperCase()}]:`;
+        const titulo = matchAE[2].trim();
+        if (textoAtual.includes(tag) && (titulo === "" || textoAtual.includes(titulo))) {
+          novosIds.add(g.id);
+          return;
+        }
+      } else {
+        const titulo = g.aprendizagemEssencial.trim();
+        if (titulo && textoAtual.includes(titulo)) {
+          novosIds.add(g.id);
+        }
       }
     });
     setSelecionadasAE(novosIds);
   }, [gruposAE, data.objetosConhecimento]);
-
 
   // Formata o conjunto de AEs selecionadas para o padrão exato solicitado: [AE1]: (Título)
   const formatarGruposParaTexto = (selecionados: Set<string>): string => {

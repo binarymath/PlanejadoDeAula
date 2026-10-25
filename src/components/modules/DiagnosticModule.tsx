@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   AlertTriangle,
   Sparkles,
@@ -11,6 +11,7 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
+  Eye,
 } from "lucide-react";
 import { LessonPlanState } from "../../types/lessonPlan";
 import { getBimesterTitles } from "../../utils/bimesterHelper";
@@ -23,6 +24,8 @@ import {
   filtrarAbasPorNivel,
   carregarDescritoresDaAba,
   formatarPorcentagem2Casas,
+  extrairValorPorcentagem,
+  padronizarNomeTurma,
   normalizarGoogleSheetsXlsxUrl,
 } from "../../services/googleSheetsService";
 import { Link, CheckCircle2 } from "lucide-react";
@@ -98,54 +101,78 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
     }
   }, []);
 
-  // Ouvir atualizações de links (ex: via modal JSON)
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const novaUrl = localStorage.getItem(STORAGE_DIAGNOSTIC_URL_KEY) || "";
-      if (novaUrl !== urlPlanilha) {
-        setUrlPlanilha(novaUrl);
-        if (novaUrl.trim()) {
-          handleConectarPlanilha(novaUrl.trim());
-        } else {
-          setPlanilhaConectada(false);
-          setTodasAbas([]);
-          setAbaSelecionada("");
-          setDescritores([]);
-        }
-      }
-    };
-    window.addEventListener("storage_links_updated", handleStorageChange);
-    window.addEventListener("storage", handleStorageChange);
-    return () => {
-      window.removeEventListener("storage_links_updated", handleStorageChange);
-      window.removeEventListener("storage", handleStorageChange);
-    };
-  }, [urlPlanilha]);
 
-  // 1. Identifica o nível a partir do Ano Escolar / Turmas
+  // Extrai nome compacto da sala a partir do nome da aba (ex: "7A-1B" -> "7A", "6A" -> "6A")
+  const formatarNomeSala = (aba: string) => {
+    const match = aba.match(/^(\d)\s*([A-Za-z])/);
+    if (match) return `${match[1]}${match[2].toUpperCase()}`;
+    return aba.replace(/[-–].*$/, "").trim().toUpperCase();
+  };
+
+  // 1. Identifica as turmas cadastradas na Seção de Identificação (ex: ["6A", "6B"])
+  const turmasIdentificadas = useMemo(() => {
+    const lista = (data.turmas && data.turmas.length > 0 ? data.turmas : [])
+      .map((t) => padronizarNomeTurma(t.nome))
+      .filter((n) => n.length > 0);
+    return Array.from(new Set(lista));
+  }, [data.turmas]);
+
+  // Nível escolar detectado (ex: "6", "7")
   const nivelDetectado =
     extrairNivelEscolar(data.anoEscolar) ||
     (data.turmas && data.turmas.length > 0
       ? extrairNivelEscolar(data.turmas[0].nome)
       : null);
 
-  // 2. Restringe as abas permitidas estritamente ao nível do professor
-  const abasDoNivel = filtrarAbasPorNivel(todasAbas, nivelDetectado);
+  // 2. Restringe as abas da planilha estritamente às turmas cadastradas na Identificação
+  const abasDisponiveis = useMemo(() => {
+    if (todasAbas.length === 0) return [];
+
+    // Se o professor cadastrou turmas na Identificação (ex: "6A", "6B")
+    if (turmasIdentificadas.length > 0) {
+      const filtradas = todasAbas.filter((aba) => {
+        const salaDaAba = formatarNomeSala(aba);
+        return turmasIdentificadas.includes(salaDaAba);
+      });
+      if (filtradas.length > 0) return filtradas;
+    }
+
+    // Fallback: se nenhuma turma foi cadastrada ainda, filtra pelo nível do ano escolar
+    if (nivelDetectado) {
+      return filtrarAbasPorNivel(todasAbas, nivelDetectado);
+    }
+
+    return todasAbas;
+  }, [todasAbas, turmasIdentificadas, nivelDetectado]);
+
+  // Função para formatar o rótulo limpo do seletor: ex: "6A - 1º Bimestre" (sem a palavra "Aba")
+  const formatarRotuloAba = (aba: string) => {
+    const sala = formatarNomeSala(aba); // ex: "6A"
+    const matchBim = aba.match(/[-–]\s*([1-4])\s*[Bb]/i);
+    let bimStr = data.bimestre || "1º Bimestre";
+    if (matchBim) {
+      bimStr = `${matchBim[1]}º Bimestre`;
+    }
+    return `${sala} - ${bimStr}`;
+  };
 
   // 3. Tenta encontrar a aba ideal para a turma e bimestre
   useEffect(() => {
-    if (planilhaConectada && abasDoNivel.length > 0) {
+    if (planilhaConectada && abasDisponiveis.length > 0) {
       const sufixoBim = obterSufixoBimestreRecuperacao(data.bimestre); // ex: "1B", "2B", "3B"
-      const primeiraTurma =
-        data.turmas && data.turmas.length > 0 ? data.turmas[0].nome : data.anoEscolar;
-      const letraTurma = extrairLetraTurma(primeiraTurma) || "A";
+      const primeiraTurmaPadrao =
+        turmasIdentificadas.length > 0 ? turmasIdentificadas[0] : "";
 
-      // Padrão de busca: ex "7A-1B"
-      const nomeAbaEsperada = nivelDetectado ? `${nivelDetectado}${letraTurma}-${sufixoBim}` : "";
       const abaEncontrada =
-        (nomeAbaEsperada && abasDoNivel.find((a) => a.toUpperCase() === nomeAbaEsperada.toUpperCase())) ||
-        abasDoNivel.find((a) => a.includes(sufixoBim)) ||
-        abasDoNivel[0];
+        (primeiraTurmaPadrao &&
+          abasDisponiveis.find((a) => {
+            const sala = formatarNomeSala(a);
+            return sala === primeiraTurmaPadrao && a.toUpperCase().includes(sufixoBim);
+          })) ||
+        (primeiraTurmaPadrao &&
+          abasDisponiveis.find((a) => formatarNomeSala(a) === primeiraTurmaPadrao)) ||
+        abasDisponiveis.find((a) => a.toUpperCase().includes(sufixoBim)) ||
+        abasDisponiveis[0];
 
       if (abaEncontrada && abaEncontrada !== abaSelecionada) {
         setAbaSelecionada(abaEncontrada);
@@ -154,7 +181,7 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
       setAbaSelecionada("");
       setDescritores([]);
     }
-  }, [planilhaConectada, nivelDetectado, data.bimestre, data.anoEscolar, data.turmas, todasAbas]);
+  }, [planilhaConectada, abasDisponiveis, data.bimestre, turmasIdentificadas]);
 
   // 4. Carrega os descritores ao selecionar a aba ou mudar o componente curricular
   useEffect(() => {
@@ -202,13 +229,6 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
   }, [planilhaConectada, abaSelecionada, data.componenteCurricular, urlPlanilha]);
 
 
-  // Extrai nome amigável da sala a partir do nome da aba (ex: "7A-1B" -> "7º A")
-  const formatarNomeSala = (aba: string) => {
-    const match = aba.match(/^(\d)([A-Za-z])/);
-    if (match) return `${match[1]}º ${match[2].toUpperCase()}`;
-    return aba;
-  };
-
   // Estrutura interna para armazenar as seleções: mapa de descritor -> Map<sala, taxa>
   // Para manter compatibilidade com o campo de texto livre e permitir sincronização bidirecional,
   // fornecemos funções utilitárias de parse e formatação do texto.
@@ -224,8 +244,7 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
       const linha = l.trim();
       if (!linha) return;
 
-      // Formato agrupado: • [6º A: 10,00% | 6º C: 8,70%]: Descrição...
-      // ou • [6º A - 10,00% | 6º C - 8,70%]: Descrição...
+      // Formato agrupado: • [6A: 10,00% | 6C: 8,70%]: Descrição... ou [6º A: 10,00%]
       const matchAgrupado = linha.match(/^•?\s*\[(.*?)\]:\s*(.*)$/);
       if (matchAgrupado) {
         const blocoSalas = matchAgrupado[1];
@@ -233,10 +252,12 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
         const pares = blocoSalas.split("|");
         const list: { sala: string; taxa: string }[] = [];
         pares.forEach((p) => {
-          // ex: "6º A: 10,00%" ou "6º A - 10,00%" ou "Acerto: 10,00% | Sala: 6º A"
+          // ex: "6A: 10,00%" ou "6º A: 10,00%" ou "6A - 10,00%"
           const mPar = p.match(/([^:\-]+)[:\-]\s*([0-9.,]+%?)/);
           if (mPar) {
-            list.push({ sala: mPar[1].trim(), taxa: formatarPorcentagem2Casas(mPar[2].trim()) });
+            const salaRaw = mPar[1].trim();
+            const salaPadrao = padronizarNomeTurma(salaRaw);
+            list.push({ sala: salaPadrao, taxa: formatarPorcentagem2Casas(mPar[2].trim()) });
           }
         });
         if (list.length > 0) {
@@ -249,7 +270,7 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
       const matchLegado = linha.match(/^•?\s*\[Acerto:\s*([^|\]]+)\s*\|\s*Sala:\s*([^\]]+)\]\s*(.*)$/i);
       if (matchLegado) {
         const taxa = formatarPorcentagem2Casas(matchLegado[1].trim());
-        const sala = matchLegado[2].trim();
+        const sala = padronizarNomeTurma(matchLegado[2].trim());
         const desc = matchLegado[3].trim();
         const existing = mapa.get(desc) || [];
         existing.push({ sala, taxa });
@@ -447,29 +468,21 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
             {/* Seletor de Turma/Aba e Ações só aparecem DEPOIS de conectar a planilha */}
             {planilhaConectada ? (
               <div className="space-y-3 pt-1 border-t border-slate-200/60">
-                <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                {/* Seletor de Turma/Aba e Ações só aparecem DEPOIS de conectar a planilha */}
+                <div className="flex flex-wrap items-center justify-between gap-3 text-xs pt-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-600 font-semibold">Aba da Sala:</span>
+                    <span className="text-slate-600 font-semibold">Turma / Período:</span>
                     <select
                       value={abaSelecionada}
                       onChange={(e) => setAbaSelecionada(e.target.value)}
                       className="px-2.5 py-1.5 bg-white border border-slate-300 rounded font-bold text-slate-800 focus:ring-1 focus:ring-amber-500 focus:outline-none"
                     >
-                      {abasDoNivel.map((aba) => {
-                        const amigavel = formatarNomeSala(aba);
-                        return (
-                          <option key={aba} value={aba}>
-                            Turma {amigavel} (Aba {aba})
-                          </option>
-                        );
-                      })}
+                      {abasDisponiveis.map((aba) => (
+                        <option key={aba} value={aba}>
+                          {formatarRotuloAba(aba)}
+                        </option>
+                      ))}
                     </select>
-
-                    {nivelDetectado && (
-                      <span className="text-[11px] text-slate-400">
-                        (Restrito ao {nivelDetectado}º Ano)
-                      </span>
-                    )}
                   </div>
 
                   {descritores.length > 0 && (
@@ -512,48 +525,96 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
             {/* LISTA COMPACTA DE DESCRITORES COM CHECKBOX */}
             {!carregando && descritores.length > 0 && (
               <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1 divide-y divide-slate-100">
-                {descritores.map((item) => {
-                  const isChecked = selecionadosIds.has(item.id);
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => handleToggleDescritor(item)}
-                      className={`flex items-start gap-2.5 p-2 rounded cursor-pointer transition-colors ${
-                        isChecked
-                          ? "bg-amber-50/70 border border-amber-200/80"
-                          : "hover:bg-slate-100/70 border border-transparent"
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        className="mt-0.5 text-amber-600 flex-shrink-0"
+                {descritores
+                  .slice()
+                  .sort((a, b) => extrairValorPorcentagem(a.taxaAcerto) - extrairValorPorcentagem(b.taxaAcerto))
+                  .map((item) => {
+                    const isChecked = selecionadosIds.has(item.id);
+                    const linkRef = item.linkDrive || item.linkMaterial;
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => handleToggleDescritor(item)}
+                        className={`flex items-start gap-2.5 p-2 rounded cursor-pointer transition-colors ${
+                          isChecked
+                            ? "bg-amber-50/70 border border-amber-200/80"
+                            : "hover:bg-slate-100/70 border border-transparent"
+                        }`}
                       >
-                        {isChecked ? (
-                          <CheckSquare className="w-4 h-4" />
-                        ) : (
-                          <Square className="w-4 h-4 text-slate-400" />
-                        )}
-                      </button>
+                        <button
+                          type="button"
+                          className="mt-0.5 text-amber-600 flex-shrink-0"
+                        >
+                          {isChecked ? (
+                            <CheckSquare className="w-4 h-4" />
+                          ) : (
+                            <Square className="w-4 h-4 text-slate-400" />
+                          )}
+                        </button>
 
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-slate-800 leading-snug">
-                          {item.descricao}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
-                          <span className="font-semibold text-amber-700 bg-amber-100/60 px-1.5 py-0.2 rounded">
-                            {item.taxaAcerto} acerto
-                          </span>
-                          <span className="text-slate-500 font-medium">{item.componente}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-slate-800 leading-snug">
+                            {item.descricao}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
+                            <span className="font-semibold text-amber-700 bg-amber-100/60 px-1.5 py-0.2 rounded">
+                              {item.taxaAcerto} acerto
+                            </span>
+                            <span className="text-slate-500 font-medium">{item.componente}</span>
+                          </div>
+                        </div>
 
-                          {item.linkMaterial && (
-                            <span className="text-slate-400 ml-auto">Material Pedagógico</span>
+                        {/* Botões com o símbolo do Olho para visualizar Material (Coluna E) e Questão (Coluna F) */}
+                        <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
+                          {/* Coluna E: Material */}
+                          {item.linkMaterial ? (
+                            <a
+                              href={item.linkMaterial}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              title="Visualizar Material Pedagógico (Coluna E)"
+                              className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100/90 px-2 py-0.5 rounded border border-amber-200 transition-all shadow-2xs hover:shadow-xs"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">Material</span>
+                            </a>
+                          ) : (
+                            <span
+                              title="Sem Material Pedagógico (Coluna E)"
+                              className="flex items-center gap-1 text-[11px] text-slate-300 px-1 py-0.5 opacity-40 cursor-not-allowed"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">Material</span>
+                            </span>
+                          )}
+
+                          {/* Coluna F: Questão */}
+                          {item.linkQuestao ? (
+                            <a
+                              href={item.linkQuestao}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              title="Visualizar Questão de Referência (Coluna F)"
+                              className="flex items-center gap-1 text-[11px] font-semibold text-sky-700 hover:text-sky-900 bg-sky-50 hover:bg-sky-100/90 px-2 py-0.5 rounded border border-sky-200 transition-all shadow-2xs hover:shadow-xs"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">Questão</span>
+                            </a>
+                          ) : (
+                            <span
+                              title="Sem Questão cadastrada (Coluna F)"
+                              className="flex items-center gap-1 text-[11px] text-slate-300 px-1 py-0.5 opacity-40 cursor-not-allowed"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">Questão</span>
+                            </span>
                           )}
                         </div>
                       </div>
-                    </div>
-
-                  );
-                })}
+                    );
+                  })}
               </div>
             )}
 

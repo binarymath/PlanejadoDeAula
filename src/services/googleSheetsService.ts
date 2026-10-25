@@ -10,9 +10,10 @@ export interface DescritorHabilidade {
   anoEscolar: string;       // ex: "7° ANO"
   taxaAcerto: string;       // ex: "81,8%"
   descricao: string;        // ex: "Inferir os termos ausentes..."
-  componente: string;       // ex: "MATEMÁTICA"
-  linkMaterial?: string;    // CMSP
-  linkDrive?: string;       // Drive
+  componente: string;       // ex: "MATEMÁTICA" (Coluna D)
+  linkMaterial?: string;    // Material de Referência (Coluna E)
+  linkQuestao?: string;     // Questão de Referência (Coluna F)
+  linkDrive?: string;       // Alias retrocompatível para linkQuestao
   abaOrigem: string;        // ex: "7A-1B"
 }
 
@@ -67,6 +68,29 @@ export async function getSheetNames(customUrl?: string): Promise<string[]> {
 }
 
 
+
+/**
+ * Converte qualquer formato de porcentagem ou número para valor numérico float (ex: "8,70%" -> 8.7, 0.087 -> 8.7)
+ */
+export function extrairValorPorcentagem(valor: string | number): number {
+  if (valor === undefined || valor === null) return 0;
+  const str = String(valor).trim();
+  if (!str) return 0;
+
+  if (str.includes("%")) {
+    const num = parseFloat(str.replace("%", "").replace(",", "."));
+    return isNaN(num) ? 0 : num;
+  }
+
+  const num = parseFloat(str.replace(",", "."));
+  if (isNaN(num)) return 0;
+
+  // Se for decimal entre 0 e 1 (ex: 0.0869565...)
+  if (num > 0 && num <= 1) {
+    return num * 100;
+  }
+  return num;
+}
 
 /**
  * Converte qualquer valor numérico ou decimal (ex: 0.086956..., "87,9%", "0.1")
@@ -130,6 +154,50 @@ export function extrairLetraTurma(textoTurma: string): string | null {
 }
 
 /**
+ * Padroniza o nome da turma para o formato compacto e oficial (ex: "6º Ano A", "6º A", "6 - A" -> "6A")
+ */
+export function padronizarNomeTurma(nomeTurma: string): string {
+  if (!nomeTurma) return "";
+  const limpo = nomeTurma.trim();
+
+  // Se já for formato "6A", "7B", "8C", etc.
+  const matchCompacto = limpo.match(/^([1-9])\s*([A-Za-z])$/i);
+  if (matchCompacto) {
+    return `${matchCompacto[1]}${matchCompacto[2].toUpperCase()}`;
+  }
+
+  // Detecta nível (1 a 9) e letra (A-Z) em formatos como "6º Ano A", "6° ano B", "6ºA", "Turma 6A", "6 - A"
+  const matchGeral = limpo.match(/([1-9])\s*(?:º|°|\^|\s*ano)?\s*[-–]?\s*([A-Za-z])/i);
+  if (matchGeral) {
+    return `${matchGeral[1]}${matchGeral[2].toUpperCase()}`;
+  }
+
+  return limpo.toUpperCase();
+}
+
+/**
+ * Extrai todas as turmas únicas identificadas nas abas da planilha de diagnóstico (ex: "6A-1B" -> "6A")
+ */
+export async function obterTurmasDaPlanilhaDiagnostico(
+  customUrl?: string
+): Promise<string[]> {
+  const wb = await getGoogleWorkbook(customUrl);
+  if (!wb || !wb.SheetNames) return [];
+
+  const turmasSet = new Set<string>();
+
+  wb.SheetNames.forEach((aba) => {
+    // Abas seguem padrão como "6A-1B", "7B-2B", "8C", "9A", etc.
+    const match = aba.match(/^([1-9][A-Za-z])/);
+    if (match) {
+      turmasSet.add(match[1].toUpperCase());
+    }
+  });
+
+  return Array.from(turmasSet).sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
+/**
  * Identifica qual bimestre da planilha buscar para recuperação:
  * - Se o plano for do 1º Bimestre -> busca "1B" (diagnóstico)
  * - Se o plano for do 2º Bimestre -> busca "1B"
@@ -154,7 +222,54 @@ export function filtrarAbasPorNivel(todasAbas: string[], nivel: string | null): 
 }
 
 /**
- * Carrega e extrai os descritores de uma aba específica, filtrando pelo Componente Curricular
+ * Limpa códigos e sufixos numéricos do nome do componente (ex: "Matemática - 2700" -> "Matemática")
+ */
+export function limparNomeComponente(nome: string): string {
+  if (!nome) return "";
+  return nome
+    .replace(/\s*[-–]\s*\d+\s*$/, "") // remove sufixo como "- 2700" ou "- 2800"
+    .replace(/\s*\(\s*\d+\s*\)\s*$/, "") // remove sufixo como "(2700)"
+    .trim();
+}
+
+/**
+ * Extrai todas as disciplinas únicas presentes na coluna D (índice 3) de uma aba ou de todas as abas
+ */
+export async function obterDisciplinasDaPlanilhaDiagnostico(
+  abaNome?: string,
+  customUrl?: string
+): Promise<string[]> {
+  const wb = await getGoogleWorkbook(customUrl);
+  if (!wb) return [];
+
+  const disciplinasSet = new Set<string>();
+  const abasParaVarredura = abaNome && wb.Sheets[abaNome] ? [abaNome] : wb.SheetNames;
+
+  abasParaVarredura.forEach((aba) => {
+    const ws = wb.Sheets[aba];
+    if (!ws) return;
+    const rawRows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+    rawRows.forEach((row) => {
+      if (!row || row.length < 4) return;
+      const compBruto = String(row[3] || "").trim(); // Coluna D (índice 3)
+      const comp = limparNomeComponente(compBruto);
+      if (
+        comp &&
+        comp.toLowerCase() !== "componente" &&
+        comp.toLowerCase() !== "disciplina" &&
+        comp.toLowerCase() !== "matéria" &&
+        comp.length < 50
+      ) {
+        disciplinasSet.add(comp);
+      }
+    });
+  });
+
+  return Array.from(disciplinasSet).sort();
+}
+
+/**
+ * Carrega e extrai os descritores de uma aba específica, filtrando pelo Componente Curricular (Coluna D)
  */
 export async function carregarDescritoresDaAba(
   abaNome: string,
@@ -166,12 +281,10 @@ export async function carregarDescritoresDaAba(
   const ws = wb.Sheets[abaNome];
   if (!ws) return [];
 
-
-
   const rawRows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
   const descritores: DescritorHabilidade[] = [];
 
-  const compFiltroNorm = componenteFiltro ? normalizarTexto(componenteFiltro) : "";
+  const compFiltroNorm = componenteFiltro ? normalizarTexto(limparNomeComponente(componenteFiltro)) : "";
 
   rawRows.forEach((row, idx) => {
     if (!row || row.length < 3) return;
@@ -180,17 +293,19 @@ export async function carregarDescritoresDaAba(
     const taxaRaw = String(row[1] || "").trim();
     const taxa = formatarPorcentagem2Casas(taxaRaw);
     const descricao = String(row[2] || "").trim();
-    const componente = String(row[3] || "").trim();
-    const linkCMSP = String(row[4] || "").trim();
-    const linkDrive = String(row[5] || "").trim();
+    const componenteBruto = String(row[3] || "").trim(); // Coluna D (Componente Curricular)
+    const componenteLimpo = limparNomeComponente(componenteBruto);
+    const linkMaterial = String(row[4] || "").trim();    // Coluna E (Material)
+    const linkQuestao = String(row[5] || "").trim();     // Coluna F (Questão)
 
     if (!descricao || descricao.toLowerCase() === "descritor") return;
 
-    // Se houver componente configurado, filtra (ex: "Matemática" bate com "MATEMÁTICA")
-    if (compFiltroNorm && componente) {
-      const rowCompNorm = normalizarTexto(componente);
-      // Confere se um contém o outro (ex: "matematica" em "matematica", "lingua portuguesa" em "portuguesa")
+    // Se houver componente configurado e for diferente de vazio/"todos", filtra
+    if (compFiltroNorm && componenteBruto) {
+      const rowCompNorm = normalizarTexto(componenteLimpo);
+      // Confere igualdade direta ou abrangência
       const matches =
+        rowCompNorm === compFiltroNorm ||
         rowCompNorm.includes(compFiltroNorm) ||
         compFiltroNorm.includes(rowCompNorm) ||
         (compFiltroNorm.includes("portugues") && rowCompNorm.includes("portugues")) ||
@@ -199,7 +314,9 @@ export async function carregarDescritoresDaAba(
         (compFiltroNorm.includes("ingl") && rowCompNorm.includes("ingl")) ||
         (compFiltroNorm.includes("hist") && rowCompNorm.includes("hist")) ||
         (compFiltroNorm.includes("geog") && rowCompNorm.includes("geog")) ||
-        (compFiltroNorm.includes("tecnolog") && rowCompNorm.includes("tecnolog"));
+        (compFiltroNorm.includes("tecnolog") && rowCompNorm.includes("tecnolog")) ||
+        (compFiltroNorm.includes("arte") && rowCompNorm.includes("arte")) ||
+        (compFiltroNorm.includes("educacao fisica") && rowCompNorm.includes("fisica"));
 
       if (!matches) {
         return;
@@ -211,12 +328,19 @@ export async function carregarDescritoresDaAba(
       anoEscolar: ano,
       taxaAcerto: taxa,
       descricao: descricao,
-      componente: componente,
-      linkMaterial: linkCMSP,
-      linkDrive: linkDrive,
+      componente: componenteLimpo,
+      linkMaterial: linkMaterial,
+      linkQuestao: linkQuestao,
+      linkDrive: linkQuestao, // retrocompatibilidade
       abaOrigem: abaNome,
     });
   });
 
-  return descritores;
+  // Ordena sempre em ordem crescente da menor porcentagem para a maior
+  return descritores.sort((a, b) => {
+    const valA = extrairValorPorcentagem(a.taxaAcerto);
+    const valB = extrairValorPorcentagem(b.taxaAcerto);
+    return valA - valB;
+  });
 }
+

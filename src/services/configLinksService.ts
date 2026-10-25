@@ -1,4 +1,6 @@
 import { LessonPlanState, initialLessonPlanState } from "../types/lessonPlan";
+import { urlParaBase64 } from "../utils/imageHelper";
+import { limparNomeComponente, normalizarTexto } from "./googleSheetsService";
 
 export interface PlanilhasLinksConfig {
   recuperacaoDiagnostica?: string;
@@ -7,6 +9,15 @@ export interface PlanilhasLinksConfig {
   avaliacao?: string;
   referencias?: string;
   disciplinas?: Record<string, string>;
+}
+
+export interface DisciplinaFundida {
+  nome: string;              // Nome oficial ou limpo de exibição
+  chaveCanonica: string;     // Chave normalizada para comparação
+  origemPlanilhaOficial: boolean;
+  origemSistema: boolean;
+  urlCurriculo?: string;     // URL da planilha de currículo vinculada se houver
+  chaveSistemaOriginal?: string; // Chave original que está no JSON se for diferente
 }
 
 /**
@@ -46,6 +57,63 @@ export function obterConfiguracaoLinks(): BackupCompletoPlanejadorJSON | null {
 }
 
 /**
+ * Funde disciplinas da planilha oficial com as salvas no sistema JSON em uma lista única consolidada
+ */
+export function fundirDisciplinas(
+  disciplinasPlanilha: string[],
+  disciplinasSistema: string[]
+): DisciplinaFundida[] {
+  const mapa = new Map<string, DisciplinaFundida>();
+  const config = obterConfiguracaoLinks();
+  const discObj: Record<string, string> =
+    (config?.planilhas?.disciplinas as Record<string, string>) ||
+    ((config as any)?.disciplinas as Record<string, string>) ||
+    {};
+
+  // 1. Processa disciplinas da Planilha Oficial (prioridade de nomenclatura)
+  disciplinasPlanilha.forEach((nomeBruto) => {
+    const nomeLimpo = limparNomeComponente(nomeBruto);
+    if (!nomeLimpo) return;
+    const chave = normalizarTexto(nomeLimpo);
+    mapa.set(chave, {
+      nome: nomeLimpo,
+      chaveCanonica: chave,
+      origemPlanilhaOficial: true,
+      origemSistema: false,
+    });
+  });
+
+  // 2. Funde as disciplinas salvas no Sistema (JSON)
+  disciplinasSistema.forEach((nomeSistema) => {
+    const nomeLimpo = limparNomeComponente(nomeSistema);
+    if (!nomeLimpo) return;
+    const chave = normalizarTexto(nomeLimpo);
+    const url = discObj[nomeSistema] || discObj[nomeLimpo] || "";
+
+    const existente = mapa.get(chave);
+    if (existente) {
+      // Já existia na planilha oficial: apenas marca como presente no sistema e associa a URL da planilha
+      existente.origemSistema = true;
+      if (url) existente.urlCurriculo = url;
+      existente.chaveSistemaOriginal = nomeSistema;
+    } else {
+      // Não existia na planilha oficial: adiciona como disciplina salva no sistema
+      mapa.set(chave, {
+        nome: nomeLimpo,
+        chaveCanonica: chave,
+        origemPlanilhaOficial: false,
+        origemSistema: true,
+        urlCurriculo: url,
+        chaveSistemaOriginal: nomeSistema,
+      });
+    }
+  });
+
+  // Retorna em ordem alfabética
+  return Array.from(mapa.values()).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+}
+
+/**
  * Retorna os nomes das disciplinas cadastradas em 'planilhas.disciplinas'
  */
 export function obterDisciplinasCadastradas(): string[] {
@@ -60,10 +128,23 @@ export function obterDisciplinasCadastradas(): string[] {
  */
 export function aplicarDisciplinaSelecionada(nomeDisciplina: string): string | null {
   const config = obterConfiguracaoLinks();
-  const disciplinasObj = config?.planilhas?.disciplinas || (config as any)?.disciplinas;
-  if (!disciplinasObj) return null;
+  const disciplinasObj: Record<string, string> =
+    (config?.planilhas?.disciplinas as Record<string, string>) ||
+    ((config as any)?.disciplinas as Record<string, string>) ||
+    {};
 
-  const url = disciplinasObj[nomeDisciplina];
+  // Busca exata ou por correspondência canônica (limpa códigos como - 2700)
+  let url = disciplinasObj[nomeDisciplina];
+  if (!url) {
+    const chaveAlvo = normalizarTexto(limparNomeComponente(nomeDisciplina));
+    for (const [k, v] of Object.entries(disciplinasObj)) {
+      if (normalizarTexto(limparNomeComponente(k)) === chaveAlvo) {
+        url = v;
+        break;
+      }
+    }
+  }
+
   if (url && url.trim()) {
     localStorage.setItem(STORAGE_KEYS.CURRICULO, url.trim());
     window.dispatchEvent(new Event("storage_links_updated"));
@@ -71,6 +152,65 @@ export function aplicarDisciplinaSelecionada(nomeDisciplina: string): string | n
   }
   return null;
 }
+
+/**
+ * Cadastra uma nova disciplina no arquivo de configuração do sistema
+ */
+export function cadastrarNovaDisciplina(nomeDisciplina: string, urlPlanilhaCurriculo?: string): void {
+  const nomeLimpo = limparNomeComponente(nomeDisciplina.trim());
+  if (!nomeLimpo) return;
+
+  const configAtual = obterConfiguracaoLinks() || {
+    planilhas: {
+      recuperacaoDiagnostica: localStorage.getItem(STORAGE_KEYS.DIAGNOSTICO) || "",
+      socioemocionais: localStorage.getItem(STORAGE_KEYS.SOCIOEMOCIONAL) || "",
+      metodologias: localStorage.getItem(STORAGE_KEYS.METODOLOGIAS) || "",
+      avaliacao: localStorage.getItem(STORAGE_KEYS.AVALIACAO) || "",
+      referencias: localStorage.getItem(STORAGE_KEYS.REFERENCIAS) || "",
+      disciplinas: {},
+    },
+    planejamento: {} as any,
+  };
+
+  if (!configAtual.planilhas) {
+    configAtual.planilhas = {};
+  }
+  const discMap: Record<string, string> = (configAtual.planilhas.disciplinas as Record<string, string>) || {};
+  if (!discMap[nomeLimpo]) {
+    discMap[nomeLimpo] = urlPlanilhaCurriculo?.trim() || "";
+  }
+  configAtual.planilhas.disciplinas = discMap;
+
+  localStorage.setItem(STORAGE_KEYS.CONFIG_JSON, JSON.stringify(configAtual, null, 2));
+  window.dispatchEvent(new Event("storage_links_updated"));
+}
+
+/**
+ * Remove uma disciplina do arquivo de configuração do sistema
+ */
+export function removerDisciplinaCadastrada(nomeDisciplina: string): void {
+  const nomeLimpo = limparNomeComponente(nomeDisciplina.trim());
+  if (!nomeLimpo) return;
+
+  const configAtual = obterConfiguracaoLinks();
+  if (!configAtual || !configAtual.planilhas || !configAtual.planilhas.disciplinas) return;
+
+  const discMap: Record<string, string> = { ...(configAtual.planilhas.disciplinas as Record<string, string>) };
+  const chaveAlvo = normalizarTexto(nomeLimpo);
+
+  // Remove todas as chaves que correspondam ao nome normalizado (ex: "Matemática", "Matemática - 2700")
+  for (const k of Object.keys(discMap)) {
+    if (normalizarTexto(limparNomeComponente(k)) === chaveAlvo) {
+      delete discMap[k];
+    }
+  }
+
+  configAtual.planilhas.disciplinas = discMap;
+
+  localStorage.setItem(STORAGE_KEYS.CONFIG_JSON, JSON.stringify(configAtual, null, 2));
+  window.dispatchEvent(new Event("storage_links_updated"));
+}
+
 
 /**
  * Gera o backup no padrão Opção A (sem redundâncias)
@@ -155,6 +295,20 @@ export function restaurarBackupCompleto(
       ...initialLessonPlanState,
       ...backup.planejamento,
     };
+
+    // Se o backup tiver logoEscolaUrl mas o logoEscolaBase64 estiver vazio, converte assincronamente em background
+    if (dadosCombinados.logoEscolaUrl && !dadosCombinados.logoEscolaBase64) {
+      urlParaBase64(dadosCombinados.logoEscolaUrl)
+        .then((b64) => {
+          if (b64) {
+            dadosCombinados.logoEscolaBase64 = b64;
+            localStorage.setItem(STORAGE_KEYS.DADOS_AULA, JSON.stringify(dadosCombinados));
+            if (onRestaurarDados) onRestaurarDados({ ...dadosCombinados });
+          }
+        })
+        .catch((e) => console.warn("Não foi possível carregar imagem do logo restaurada por URL:", e));
+    }
+
     localStorage.setItem(STORAGE_KEYS.DADOS_AULA, JSON.stringify(dadosCombinados));
     if (onRestaurarDados) {
       onRestaurarDados(dadosCombinados);

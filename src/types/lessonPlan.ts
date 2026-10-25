@@ -31,6 +31,7 @@ export interface LessonPlanState {
   // Dados da Escola
   nomeEscola: string;
   logoEscolaBase64: string;
+  logoEscolaUrl?: string;
 
   // Identificação Geral
   nomeProfessor: string;
@@ -68,6 +69,7 @@ export const initialTurmas: TurmaPlanejada[] = [
 export const initialLessonPlanState: LessonPlanState = {
   nomeEscola: "",
   logoEscolaBase64: "",
+  logoEscolaUrl: "",
   nomeProfessor: "",
   componenteCurricular: "",
   anoEscolar: "",

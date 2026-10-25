@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import {
   UserCheck,
   School,
@@ -10,6 +10,9 @@ import {
   Calculator,
   AlertCircle,
   HelpCircle,
+  Link as LinkIcon,
+  Loader2,
+  ExternalLink,
 } from "lucide-react";
 import { LessonPlanState, TurmaPlanejada, FeriadoExcecao, TipoEventoEscolar } from "../../types/lessonPlan";
 import { SPREADSHEETS_CONFIG } from "../../config/spreadsheets";
@@ -18,7 +21,20 @@ import { calcularAulasPrevistas } from "../../utils/classCalculator";
 import {
   obterDisciplinasCadastradas,
   aplicarDisciplinaSelecionada,
+  cadastrarNovaDisciplina,
+  removerDisciplinaCadastrada,
+  fundirDisciplinas,
+  DisciplinaFundida,
+  STORAGE_KEYS,
 } from "../../services/configLinksService";
+import {
+  obterDisciplinasDaPlanilhaDiagnostico,
+  obterTurmasDaPlanilhaDiagnostico,
+  padronizarNomeTurma,
+  limparNomeComponente,
+  normalizarTexto,
+} from "../../services/googleSheetsService";
+import { urlParaBase64 } from "../../utils/imageHelper";
 
 interface IdentificationModuleProps {
   data: LessonPlanState;
@@ -46,6 +62,21 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
 
   // Lista de disciplinas do arquivo JSON
   const [disciplinasJSON, setDisciplinasJSON] = useState<string[]>(() => obterDisciplinasCadastradas());
+  const [disciplinasColunaD, setDisciplinasColunaD] = useState<string[]>([]);
+  const [cadastrandoNovaDisc, setCadastrandoNovaDisc] = useState<boolean>(false);
+  const [novaDiscTexto, setNovaDiscTexto] = useState<string>("");
+
+  // Disciplinas fundidas (Planilha Oficial + JSON do Sistema sem duplicidades)
+  const disciplinasFundidas = useMemo(() => {
+    return fundirDisciplinas(disciplinasColunaD, disciplinasJSON);
+  }, [disciplinasColunaD, disciplinasJSON]);
+
+  // Disciplina selecionada atual dentro da lista fundida (se houver correspondência canônica)
+  const disciplinaAtualFundida = useMemo(() => {
+    if (!data.componenteCurricular) return null;
+    const chaveAtual = normalizarTexto(limparNomeComponente(data.componenteCurricular));
+    return disciplinasFundidas.find((d) => d.chaveCanonica === chaveAtual) || null;
+  }, [disciplinasFundidas, data.componenteCurricular]);
 
   useEffect(() => {
     const handleAtualizarDisciplinas = () => {
@@ -56,6 +87,41 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
     return () => {
       window.removeEventListener("storage_links_updated", handleAtualizarDisciplinas);
       window.removeEventListener("storage", handleAtualizarDisciplinas);
+    };
+  }, []);
+
+  // Busca disciplinas e turmas diretamente na Planilha de Diagnóstico conectada
+  const [turmasPlanilha, setTurmasPlanilha] = useState<string[]>([]);
+
+  useEffect(() => {
+    const urlDiag = localStorage.getItem(STORAGE_KEYS.DIAGNOSTICO) || "";
+    if (!urlDiag.trim()) {
+      setDisciplinasColunaD([]);
+      setTurmasPlanilha([]);
+      return;
+    }
+
+    let ativo = true;
+    obterDisciplinasDaPlanilhaDiagnostico(undefined, urlDiag.trim())
+      .then((discs) => {
+        if (!ativo) return;
+        setDisciplinasColunaD(discs);
+      })
+      .catch((err) => {
+        console.warn("Falha ao buscar disciplinas da coluna D na Identificação:", err);
+      });
+
+    obterTurmasDaPlanilhaDiagnostico(urlDiag.trim())
+      .then((salas) => {
+        if (!ativo) return;
+        setTurmasPlanilha(salas);
+      })
+      .catch((err) => {
+        console.warn("Falha ao buscar turmas da planilha na Identificação:", err);
+      });
+
+    return () => {
+      ativo = false;
     };
   }, []);
 
@@ -98,6 +164,42 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
     }
   };
 
+  // Estados para inserção de Logo via URL / Google Drive
+  const [urlLogoInput, setUrlLogoInput] = useState<string>(data.logoEscolaUrl || "");
+  const [modoUrlLogo, setModoUrlLogo] = useState<boolean>(Boolean(data.logoEscolaUrl));
+  const [carregandoLogoUrl, setCarregandoLogoUrl] = useState<boolean>(false);
+  const [erroLogoUrl, setErroLogoUrl] = useState<string>("");
+
+  useEffect(() => {
+    if (data.logoEscolaUrl && data.logoEscolaUrl !== urlLogoInput) {
+      setUrlLogoInput(data.logoEscolaUrl);
+    }
+  }, [data.logoEscolaUrl]);
+
+  const handleAplicarUrlLogo = async (urlCustom?: string) => {
+    const linkParaAplicar = (urlCustom ?? urlLogoInput).trim();
+    if (!linkParaAplicar) {
+      setErroLogoUrl("Por favor, cole o link da imagem ou link do Google Drive.");
+      return;
+    }
+
+    try {
+      setCarregandoLogoUrl(true);
+      setErroLogoUrl("");
+      const base64 = await urlParaBase64(linkParaAplicar);
+      onChange("logoEscolaBase64", base64);
+      onChange("logoEscolaUrl", linkParaAplicar);
+    } catch (err: any) {
+      console.error("Erro ao converter logo via URL:", err);
+      setErroLogoUrl(
+        err.message ||
+          "Não foi possível carregar a imagem. Verifique se o link é público (se for Google Drive, escolha 'Qualquer pessoa com o link')."
+      );
+    } finally {
+      setCarregandoLogoUrl(false);
+    }
+  };
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -109,6 +211,8 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
       reader.onload = (event) => {
         const base64 = event.target?.result as string;
         onChange("logoEscolaBase64", base64);
+        onChange("logoEscolaUrl", "");
+        setUrlLogoInput("");
       };
       reader.readAsDataURL(file);
     }
@@ -116,6 +220,9 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
 
   const handleRemoveLogo = () => {
     onChange("logoEscolaBase64", "");
+    onChange("logoEscolaUrl", "");
+    setUrlLogoInput("");
+    setErroLogoUrl("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -148,6 +255,47 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
       "turmas",
       data.turmas.map((t) => (t.id === id ? { ...t, nome } : t))
     );
+  };
+
+  const handleTurmaBlur = (id: string, nomeAtual: string) => {
+    if (!nomeAtual.trim()) return;
+    const nomePadrao = padronizarNomeTurma(nomeAtual);
+    const turmasAtuais = [...data.turmas];
+    const indexAtual = turmasAtuais.findIndex((t) => t.id === id);
+    if (indexAtual === -1) return;
+
+    // Procura se já existe outra turma com o mesmo nome padronizado (fusão de turmas iguais)
+    const indexOutra = turmasAtuais.findIndex(
+      (t) => t.id !== id && padronizarNomeTurma(t.nome) === nomePadrao
+    );
+
+    if (indexOutra !== -1) {
+      // Funde as aulas das duas turmas
+      const turmaAlvo = turmasAtuais[indexOutra];
+      const turmaOrigem = turmasAtuais[indexAtual];
+
+      turmaAlvo.nome = nomePadrao;
+      (
+        ["seg", "ter", "qua", "qui", "sex"] as (keyof TurmaPlanejada["aulasPorDia"])[]
+      ).forEach((dia) => {
+        turmaAlvo.aulasPorDia[dia] = Math.max(
+          turmaAlvo.aulasPorDia[dia] || 0,
+          turmaOrigem.aulasPorDia[dia] || 0
+        );
+      });
+      turmaAlvo.aulasSabadoLetivo = Math.max(
+        turmaAlvo.aulasSabadoLetivo || 0,
+        turmaOrigem.aulasSabadoLetivo || 0
+      );
+
+      // Remove a turma duplicada mantendo apenas a turma fundida
+      const novasTurmas = turmasAtuais.filter((t) => t.id !== id);
+      onChange("turmas", novasTurmas);
+    } else {
+      // Apenas normaliza o nome para o formato compacto (ex: 6A)
+      turmasAtuais[indexAtual].nome = nomePadrao;
+      onChange("turmas", turmasAtuais);
+    }
   };
 
   const handleAulasDiaChange = (
@@ -260,9 +408,38 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
-              Logotipo da Escola:
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-600 uppercase">
+                Logotipo da Escola:
+              </label>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setModoUrlLogo(false)}
+                  className={`px-1.5 py-0.5 text-[10px] rounded font-medium transition-colors ${
+                    !modoUrlLogo
+                      ? "bg-sky-100 text-sky-800 font-semibold"
+                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                  }`}
+                >
+                  Arquivo
+                </button>
+                <span className="text-[10px] text-slate-300">|</span>
+                <button
+                  type="button"
+                  onClick={() => setModoUrlLogo(true)}
+                  className={`px-1.5 py-0.5 text-[10px] rounded font-medium transition-colors flex items-center gap-1 ${
+                    modoUrlLogo
+                      ? "bg-sky-100 text-sky-800 font-semibold"
+                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                  }`}
+                >
+                  <LinkIcon className="w-2.5 h-2.5" />
+                  <span>URL / Drive</span>
+                </button>
+              </div>
+            </div>
+
             <input
               type="file"
               ref={fileInputRef}
@@ -272,23 +449,74 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
             />
 
             {data.logoEscolaBase64 ? (
-              <div className="flex items-center gap-3 p-2 bg-white border border-slate-200 rounded-lg">
-                <img
-                  src={data.logoEscolaBase64}
-                  alt="Logo da Escola"
-                  className="w-12 h-12 object-contain rounded border border-slate-100 p-0.5"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-emerald-600 truncate">Logo carregado</p>
+              <div className="p-2 bg-white border border-slate-200 rounded-lg space-y-2">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={data.logoEscolaBase64}
+                    alt="Logo da Escola"
+                    className="w-12 h-12 object-contain rounded border border-slate-100 p-0.5"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-emerald-600 truncate flex items-center gap-1">
+                      <span>Logo carregado</span>
+                      {data.logoEscolaUrl && <span className="text-[10px] text-slate-400 font-normal">(via URL)</span>}
+                    </p>
+                    {data.logoEscolaUrl && (
+                      <p className="text-[10px] text-slate-400 truncate max-w-[160px]" title={data.logoEscolaUrl}>
+                        {data.logoEscolaUrl}
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleRemoveLogo}
+                      className="inline-flex items-center gap-1 text-[11px] text-rose-600 hover:text-rose-800 font-medium mt-0.5"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Remover
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : modoUrlLogo ? (
+              <div className="space-y-1.5">
+                <div className="flex gap-1.5">
+                  <input
+                    type="text"
+                    value={urlLogoInput}
+                    onChange={(e) => {
+                      setUrlLogoInput(e.target.value);
+                      if (erroLogoUrl) setErroLogoUrl("");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAplicarUrlLogo();
+                      }
+                    }}
+                    placeholder="Cole URL direta ou link Google Drive..."
+                    className="flex-1 px-2.5 py-1.5 bg-white border border-slate-300 rounded text-slate-800 focus:outline-none focus:ring-1 focus:ring-sky-500 text-[11px]"
+                  />
                   <button
                     type="button"
-                    onClick={handleRemoveLogo}
-                    className="inline-flex items-center gap-1 text-[11px] text-rose-600 hover:text-rose-800 font-medium mt-0.5"
+                    onClick={() => handleAplicarUrlLogo()}
+                    disabled={carregandoLogoUrl}
+                    className="px-2.5 py-1.5 bg-sky-600 hover:bg-sky-700 disabled:bg-slate-400 text-white rounded text-xs font-semibold flex items-center gap-1 transition-colors whitespace-nowrap"
                   >
-                    <Trash2 className="w-3 h-3" />
-                    Remover
+                    {carregandoLogoUrl ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <span>Carregar</span>
+                    )}
                   </button>
                 </div>
+                <p className="text-[10px] text-slate-400 leading-tight">
+                  Suporta links de imagem ou <strong>Google Drive</strong> (compartilhado como público).
+                </p>
+                {erroLogoUrl && (
+                  <p className="text-[11px] text-rose-600 bg-rose-50 p-1.5 rounded border border-rose-200">
+                    {erroLogoUrl}
+                  </p>
+                )}
               </div>
             ) : (
               <button
@@ -326,29 +554,50 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
             <label className="block text-xs font-semibold text-slate-600 uppercase">
               Componente Curricular:
             </label>
-            {disciplinasJSON.length > 0 && (
-              <span className="text-[11px] text-sky-600 font-medium">
-                {disciplinasJSON.includes(data.componenteCurricular)
-                  ? "✔ Planilha vinculada via JSON"
-                  : "Digitação manual"}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {disciplinaAtualFundida ? (
+                disciplinaAtualFundida.origemPlanilhaOficial && disciplinaAtualFundida.origemSistema ? (
+                  <span className="text-[11px] text-emerald-600 font-semibold" title="Identificada na planilha e vinculada à matriz curricular">
+                    ✔ Oficial • Vinculada
+                  </span>
+                ) : disciplinaAtualFundida.origemPlanilhaOficial ? (
+                  <span className="text-[11px] text-amber-600 font-semibold" title="Identificada na coluna D da planilha oficial">
+                    ✔ Oficial (Planilha)
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-sky-600 font-semibold" title="Cadastrada no sistema">
+                    ✔ Salva no Sistema
+                  </span>
+                )
+              ) : null}
+
+              {!cadastrandoNovaDisc && (
+                <button
+                  type="button"
+                  onClick={() => setCadastrandoNovaDisc(true)}
+                  className="text-[11px] text-sky-600 hover:text-sky-800 font-semibold hover:underline"
+                >
+                  + Cadastrar
+                </button>
+              )}
+            </div>
           </div>
 
-          {disciplinasJSON.length > 0 ? (
+          {!cadastrandoNovaDisc ? (
             <div className="space-y-1.5">
               <select
                 value={
-                  disciplinasJSON.includes(data.componenteCurricular)
-                    ? data.componenteCurricular
+                  disciplinaAtualFundida
+                    ? disciplinaAtualFundida.nome
                     : data.componenteCurricular
                     ? "__outro__"
                     : ""
                 }
                 onChange={(e) => {
                   const val = e.target.value;
-                  if (val === "__outro__") {
-                    // Mantém o valor atual ou limpa para digitação manual
+                  if (val === "__cadastrar__") {
+                    setCadastrandoNovaDisc(true);
+                  } else if (val === "__outro__") {
                     onChange("componenteCurricular", "");
                   } else {
                     onChange("componenteCurricular", val);
@@ -357,17 +606,53 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
                 }}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all text-sm font-medium"
               >
-                <option value="">Selecione uma disciplina cadastrada no JSON...</option>
-                {disciplinasJSON.map((disc) => (
-                  <option key={disc} value={disc}>
-                    {disc}
+                <option value="">Selecione ou identifique a disciplina...</option>
+
+                {/* Lista Unificada e Fundida de Disciplinas (Ordem Alfabética) */}
+                {disciplinasFundidas.map((item) => (
+                  <option key={`fund_${item.chaveCanonica}`} value={item.nome}>
+                    {item.nome}
+                    {item.origemPlanilhaOficial && item.origemSistema
+                      ? " (Oficial • Vinculada)"
+                      : item.origemPlanilhaOficial
+                      ? " (Oficial)"
+                      : " (Personalizada)"}
                   </option>
                 ))}
-                <option value="__outro__">Outro (Digitar manualmente)...</option>
+
+                <option value="__cadastrar__">+ Cadastrar nova disciplina...</option>
+                <option value="__outro__">Digitar manualmente...</option>
               </select>
 
-              {/* Se o professor escolheu Outro ou a disciplina não consta no JSON, exibe input para digitar livremente */}
-              {(!disciplinasJSON.includes(data.componenteCurricular) || !data.componenteCurricular) && (
+              {/* Botão para gerenciar/remover se estiver cadastrada no sistema JSON */}
+              {disciplinaAtualFundida && disciplinaAtualFundida.origemSistema && (
+                <div className="flex items-center justify-between px-1 text-[11px] text-slate-500">
+                  <span>
+                    Disciplina cadastrada no sistema: <strong>{disciplinaAtualFundida.nome}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          `Deseja remover "${disciplinaAtualFundida.nome}" das disciplinas salvas no sistema? Você poderá usar a planilha própria ou recadastrá-la quando quiser.`
+                        )
+                      ) {
+                        removerDisciplinaCadastrada(disciplinaAtualFundida.chaveSistemaOriginal || disciplinaAtualFundida.nome);
+                        onChange("componenteCurricular", "");
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 text-rose-600 hover:text-rose-800 font-semibold"
+                    title="Excluir do sistema para usar planilha própria"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Excluir do Sistema</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Se o professor escolheu Outro ou a disciplina não consta na lista, exibe input para digitar livremente */}
+              {!disciplinaAtualFundida && data.componenteCurricular !== undefined && (
                 <input
                   type="text"
                   value={data.componenteCurricular}
@@ -378,13 +663,55 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
               )}
             </div>
           ) : (
-            <input
-              type="text"
-              value={data.componenteCurricular}
-              onChange={(e) => onChange("componenteCurricular", e.target.value)}
-              placeholder="Digite o componente curricular (ex: Matemática, Ciências...)..."
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all text-sm"
-            />
+            /* Formulário rápido de cadastro de nova disciplina */
+            <div className="flex gap-1.5 items-center p-2 bg-sky-50 border border-sky-200 rounded-lg">
+              <input
+                type="text"
+                value={novaDiscTexto}
+                onChange={(e) => setNovaDiscTexto(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (novaDiscTexto.trim()) {
+                      const nome = novaDiscTexto.trim();
+                      cadastrarNovaDisciplina(nome);
+                      onChange("componenteCurricular", nome);
+                      setNovaDiscTexto("");
+                      setCadastrandoNovaDisc(false);
+                    }
+                  }
+                }}
+                placeholder="Nome da nova disciplina..."
+                className="flex-1 px-2.5 py-1.5 bg-white border border-sky-300 rounded text-xs text-slate-800 focus:ring-1 focus:ring-sky-500 outline-none"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (novaDiscTexto.trim()) {
+                    const nome = novaDiscTexto.trim();
+                    cadastrarNovaDisciplina(nome);
+                    onChange("componenteCurricular", nome);
+                    setNovaDiscTexto("");
+                    setCadastrandoNovaDisc(false);
+                  }
+                }}
+                disabled={!novaDiscTexto.trim()}
+                className="px-2.5 py-1.5 bg-sky-600 hover:bg-sky-700 disabled:bg-slate-300 text-white rounded text-xs font-semibold"
+              >
+                Salvar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setNovaDiscTexto("");
+                  setCadastrandoNovaDisc(false);
+                }}
+                className="px-2 py-1.5 text-xs text-slate-500 hover:text-slate-700"
+              >
+                Cancelar
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -621,6 +948,58 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
           </button>
         </div>
 
+        {/* Chips de Turmas Identificadas na Planilha Oficial para inclusão rápida */}
+        {turmasPlanilha.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 p-2.5 bg-white border border-sky-100 rounded-lg text-xs">
+            <span className="text-[11px] font-bold text-slate-500 uppercase mr-1">
+              Turmas na Planilha:
+            </span>
+            {turmasPlanilha.map((tPlan) => {
+              const jaAdicionada = turmas.some(
+                (t) => padronizarNomeTurma(t.nome) === tPlan
+              );
+              return (
+                <button
+                  key={tPlan}
+                  type="button"
+                  onClick={() => {
+                    if (jaAdicionada) return;
+                    // Se a primeira turma estiver vazia, preenche ela
+                    const primeiroVazio = turmas.find((t) => !t.nome.trim());
+                    if (primeiroVazio) {
+                      onChange(
+                        "turmas",
+                        turmas.map((t) => (t.id === primeiroVazio.id ? { ...t, nome: tPlan } : t))
+                      );
+                    } else {
+                      const nova: TurmaPlanejada = {
+                        id: String(Date.now()),
+                        nome: tPlan,
+                        aulasPorDia: { seg: 0, ter: 0, qua: 0, qui: 0, sex: 0 },
+                      };
+                      onChange("turmas", [...turmas, nova]);
+                    }
+                  }}
+                  disabled={jaAdicionada}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold transition-all ${
+                    jaAdicionada
+                      ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-default"
+                      : "bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 shadow-2xs hover:shadow-xs cursor-pointer"
+                  }`}
+                  title={jaAdicionada ? `Turma ${tPlan} já está na sua grade` : `Clique para adicionar ${tPlan} à sua grade`}
+                >
+                  <span>{tPlan}</span>
+                  {jaAdicionada ? (
+                    <span className="text-[10px] text-emerald-600 font-bold">✔</span>
+                  ) : (
+                    <span className="text-[10px] text-sky-600">+</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <div className="space-y-3">
           {turmas.map((turma, index) => {
             const aulasTurma = calculoAtual.totalAulasPorTurma[turma.id] || 0;
@@ -629,17 +1008,38 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
                 key={turma.id}
                 className="bg-white border border-slate-200 rounded-lg p-3.5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
               >
-                <div className="w-full md:w-48">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">
-                    Nome da Turma #{index + 1}
-                  </label>
-                  <input
-                    type="text"
-                    value={turma.nome}
-                    onChange={(e) => handleTurmaNomeChange(turma.id, e.target.value)}
-                    placeholder="Ex: 6º Ano A"
-                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded font-bold text-sm text-slate-800 focus:bg-white focus:ring-1 focus:ring-sky-500"
-                  />
+                <div className="w-full md:w-52">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase">
+                      Turma #{index + 1}
+                    </label>
+                    {turmasPlanilha.length > 0 && (
+                      <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
+                        Planilha Ativa
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="text"
+                      list={`sugestoes_turmas_${turma.id}`}
+                      value={turma.nome}
+                      onChange={(e) => handleTurmaNomeChange(turma.id, e.target.value)}
+                      onBlur={(e) => handleTurmaBlur(turma.id, e.target.value)}
+                      placeholder="Ex: 6A"
+                      className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded font-bold text-sm text-slate-800 focus:bg-white focus:ring-1 focus:ring-sky-500"
+                    />
+
+                    {/* Datalist com turmas identificadas na planilha de diagnóstico */}
+                    <datalist id={`sugestoes_turmas_${turma.id}`}>
+                      {turmasPlanilha.map((t) => (
+                        <option key={t} value={t}>
+                          Turma {t} (Identificada na Planilha)
+                        </option>
+                      ))}
+                    </datalist>
+                  </div>
                 </div>
 
                 {/* Seletor de Aulas por Dia (Segunda a Sexta + Sábado Letivo) */}
