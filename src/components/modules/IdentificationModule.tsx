@@ -165,7 +165,7 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
       if (calculo.resumoTextoTurmas && calculo.resumoTextoTurmas !== data.anoEscolar) {
         onChange("anoEscolar", calculo.resumoTextoTurmas);
       }
-      if (calculo.resumoControleFrequencia && (!data.controleFrequencia || data.controleFrequencia.includes("|") || data.controleFrequencia.includes("!") || data.controleFrequencia.startsWith("Limite") || data.controleFrequencia.includes("faltas") || data.controleFrequencia === "Acompanhamento diário no Diário Digital (SED)" || data.controleFrequencia === "12")) {
+      if (calculo.resumoControleFrequencia && calculo.resumoControleFrequencia !== data.controleFrequencia) {
         onChange("controleFrequencia", calculo.resumoControleFrequencia);
       }
     }
@@ -573,7 +573,7 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
                     className="w-12 h-12 object-contain rounded border border-slate-100 p-0.5"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-emerald-600 truncate flex items-center gap-1">
+                    <p className="text-xs font-semibold text-sky-600 truncate flex items-center gap-1">
                       <span>Logo carregado</span>
                       {data.logoEscolaUrl && <span className="text-[10px] text-slate-400 font-normal">(via URL)</span>}
                     </p>
@@ -673,7 +673,7 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
             <div className="flex items-center gap-2">
               {disciplinaAtualFundida ? (
                 disciplinaAtualFundida.origemPlanilhaOficial && disciplinaAtualFundida.origemSistema ? (
-                  <span className="text-[11px] text-emerald-600 font-semibold" title="Identificada na planilha e vinculada à matriz curricular">
+                  <span className="text-[11px] text-sky-600 font-semibold" title="Identificada na planilha e vinculada à matriz curricular">
                     ✔ Oficial • Vinculada
                   </span>
                 ) : disciplinaAtualFundida.origemPlanilhaOficial ? (
@@ -1133,7 +1133,7 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
                   >
                     <span
                       className={`w-2 h-2 rounded-full ${
-                        isLetivo ? "bg-emerald-500" : "bg-rose-500"
+                        isLetivo ? "bg-sky-500" : "bg-rose-500"
                       }`}
                       title={isLetivo ? "Letivo (conta na contagem)" : "Não Letivo (não entra na contagem)"}
                     />
@@ -1170,7 +1170,7 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
               </span>
               <span>
                 • Eventos escolares letivos no bimestre:{" "}
-                <strong className="text-emerald-700 font-bold">
+                <strong className="text-sky-700 font-bold">
                   {calculoAtual.eventosLetivosTotais} evento(s)
                 </strong>
               </span>
@@ -1252,7 +1252,7 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
                 >
                   <span>{tPlan}</span>
                   {jaAdicionada ? (
-                    <span className="text-[10px] text-emerald-600 font-bold">✔</span>
+                    <span className="text-[10px] text-sky-600 font-bold">✔</span>
                   ) : (
                     <span className="text-[10px] text-sky-600">+</span>
                   )}
@@ -1276,7 +1276,7 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
                       Turma #{index + 1}
                     </label>
                     {turmasPlanilha.length > 0 && (
-                      <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
+                      <span className="text-[9px] font-semibold text-sky-600 bg-sky-50 px-1 py-0.2 rounded border border-sky-200">
                         Planilha Ativa
                       </span>
                     )}

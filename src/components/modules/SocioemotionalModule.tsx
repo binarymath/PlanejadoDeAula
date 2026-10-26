@@ -184,7 +184,7 @@ export const SocioemotionalModule: React.FC<SocioemotionalModuleProps> = ({
           </div>
 
           {planilhaConectada && (
-            <div className="flex items-center gap-1.5 text-emerald-600 text-[11px] font-medium pt-1">
+            <div className="flex items-center gap-1.5 text-sky-600 text-[11px] font-medium pt-1">
               <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
               <span>Planilha de competências socioemocionais conectada com sucesso.</span>
             </div>

@@ -292,7 +292,7 @@ export const AssessmentAssistant: React.FC<AssessmentAssistantProps> = ({ data }
   const getCorNivel = (nivel: number) => {
     switch (nivel) {
       case 1:
-        return "bg-emerald-50 text-emerald-800 border-emerald-200";
+        return "bg-sky-50 text-sky-800 border-sky-200";
       case 2:
         return "bg-sky-50 text-sky-800 border-sky-200";
       case 3:
@@ -384,7 +384,7 @@ export const AssessmentAssistant: React.FC<AssessmentAssistantProps> = ({ data }
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors"
                 title="Copiar texto para colar no Word ou Google Docs"
               >
-                {copiado ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiado ? <Check className="w-3.5 h-3.5 text-sky-600" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiado ? "Copiado!" : "Copiar Texto"}</span>
               </button>
 
@@ -445,7 +445,7 @@ export const AssessmentAssistant: React.FC<AssessmentAssistantProps> = ({ data }
                         className={`p-2 rounded border text-xs flex items-start gap-2 ${
                           modoVisualizacao === "professor" &&
                           q.respostaEsperadaOuGabarito.includes(alt.letra)
-                            ? "bg-emerald-50/80 border-emerald-300 font-semibold text-emerald-950"
+                            ? "bg-sky-50/80 border-sky-300 font-semibold text-sky-950"
                             : "bg-slate-50 border-slate-200 text-slate-700"
                         }`}
                       >

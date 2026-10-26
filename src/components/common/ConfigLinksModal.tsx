@@ -162,12 +162,12 @@ export const ConfigLinksModal: React.FC<ConfigLinksModalProps> = ({
             <div
               className={`p-3.5 rounded-xl border text-xs flex items-center gap-2.5 ${
                 feedback.tipo === "sucesso"
-                  ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                  ? "bg-sky-50 border-sky-200 text-sky-800"
                   : "bg-rose-50 border-rose-200 text-rose-800"
               }`}
             >
               {feedback.tipo === "sucesso" ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-sky-600 flex-shrink-0" />
               ) : (
                 <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
               )}
@@ -177,12 +177,12 @@ export const ConfigLinksModal: React.FC<ConfigLinksModalProps> = ({
 
           {/* Destaque de Segurança e Instruções */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
-                <Shield className="w-4 h-4 text-emerald-600" />
+            <div className="p-3 bg-sky-50/70 border border-sky-200 rounded-xl space-y-1">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-sky-800">
+                <Shield className="w-4 h-4 text-sky-600" />
                 <span>Privacidade Pessoal</span>
               </div>
-              <p className="text-[11px] text-emerald-700 leading-relaxed">
+              <p className="text-[11px] text-sky-700 leading-relaxed">
                 Sua chave de API do Gemini <strong>nunca</strong> é incluída no JSON, mantendo seu acesso 100% protegido.
               </p>
             </div>
@@ -234,14 +234,14 @@ export const ConfigLinksModal: React.FC<ConfigLinksModalProps> = ({
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-slate-700 hover:bg-slate-100 rounded-lg text-xs font-medium border border-slate-200 transition-colors"
                 title="Copiar texto JSON"
               >
-                {copiado ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiado ? <Check className="w-3.5 h-3.5 text-sky-600" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiado ? "Copiado!" : "Copiar"}</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleBaixarBackup}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-2xs"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold transition-all shadow-2xs"
                 title="Baixar arquivo de backup do sistema atual"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -263,7 +263,7 @@ export const ConfigLinksModal: React.FC<ConfigLinksModalProps> = ({
               value={jsonTexto}
               onChange={(e) => setJsonTexto(e.target.value)}
               placeholder="Cole o arquivo JSON de backup aqui..."
-              className="w-full px-4 py-3 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-xl border border-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all leading-relaxed"
+              className="w-full px-4 py-3 bg-slate-900 text-sky-400 font-mono text-[11px] rounded-xl border border-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all leading-relaxed"
             />
           </div>
         </div>

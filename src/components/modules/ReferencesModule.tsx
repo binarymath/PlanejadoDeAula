@@ -210,7 +210,7 @@ export const ReferencesModule: React.FC<ReferencesModuleProps> = ({
         </div>
 
         {planilhaConectada ? (
-          <div className="flex items-center gap-1.5 text-emerald-600 text-[11px] font-medium pt-1">
+          <div className="flex items-center gap-1.5 text-sky-600 text-[11px] font-medium pt-1">
             <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
             <span>Planilha de referências conectada ({referencias.length} fontes identificadas).</span>
           </div>
@@ -319,7 +319,7 @@ export const ReferencesModule: React.FC<ReferencesModuleProps> = ({
                         }}
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all shadow-2xs hover:shadow-xs ${
                           isDownload
-                            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                            ? "bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200"
                             : "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
                         }`}
                         title={`${ref.linkTexto || (isDownload ? "Download" : "Acessar")} (Abre em nova guia)`}

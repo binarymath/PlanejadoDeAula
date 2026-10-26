@@ -681,11 +681,11 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
               <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2 shadow-2xs">
                 <div className="flex items-center justify-between">
                   <label className="block text-[11px] font-bold text-slate-800 uppercase flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                    <span className="w-2 h-2 rounded-full bg-sky-500 inline-block"></span>
                     <span>1. Planilha do Ano Atual (Vigente):</span>
                   </label>
                   {planilhaConectada && (
-                    <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    <span className="text-[10px] font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
                       Conectada ({todasAbas.length} abas)
                     </span>
                   )}
@@ -888,7 +888,7 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
                                     className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all ${
                                       isAdded
                                         ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-default"
-                                        : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
+                                        : "bg-sky-600 hover:bg-sky-700 text-white shadow-2xs"
                                     }`}
                                   >
                                     {isAdded ? "Adicionado" : "+ Foco Preventivo"}

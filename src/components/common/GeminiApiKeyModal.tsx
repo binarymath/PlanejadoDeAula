@@ -182,7 +182,7 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
               {chaveAtual && chaveAtual === inputChave.trim() && (
                 <div
                   title="Chave sincronizada e ativa"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-600"
                 >
                   <Check className="w-4 h-4 stroke-[3]" />
                 </div>
@@ -197,8 +197,8 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
             )}
 
             {salvoFeedback && (
-              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2 text-xs text-emerald-800 font-medium">
-                <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
+              <div className="p-2.5 bg-sky-50 border border-sky-200 rounded-lg flex items-center gap-2 text-xs text-sky-800 font-medium">
+                <Check className="w-4 h-4 text-sky-600 stroke-[3]" />
                 <span>Chave de API salva com sucesso no seu navegador!</span>
               </div>
             )}

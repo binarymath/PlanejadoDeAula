@@ -232,7 +232,7 @@ export const EvaluationModule: React.FC<EvaluationModuleProps> = ({
         </div>
 
         {planilhaConectada && (
-          <div className="flex items-center gap-1.5 text-emerald-600 text-[11px] font-medium pt-1">
+          <div className="flex items-center gap-1.5 text-sky-600 text-[11px] font-medium pt-1">
             <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
             <span>Planilha de avaliação conectada ({criterios.length} critérios catalogados).</span>
           </div>
@@ -259,7 +259,7 @@ export const EvaluationModule: React.FC<EvaluationModuleProps> = ({
             <span
               className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                 somaPercentual === 100
-                  ? "bg-emerald-100 text-emerald-800"
+                  ? "bg-sky-100 text-sky-800"
                   : "bg-amber-100 text-amber-800"
               }`}
             >

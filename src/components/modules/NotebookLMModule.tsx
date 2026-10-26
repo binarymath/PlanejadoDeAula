@@ -50,12 +50,12 @@ export const NotebookLMModule: React.FC = () => {
         };
       case "verde":
         return {
-          fundo: "bg-gradient-to-br from-emerald-50 via-white to-emerald-100/60",
-          accent: "text-emerald-700 bg-emerald-100/80 border-emerald-200",
-          detalhe: "bg-emerald-500",
-          borda: "border-emerald-200/60",
-          sombra: "hover:shadow-emerald-500/15",
-          btn: "bg-emerald-600 hover:bg-emerald-700 text-white",
+          fundo: "bg-gradient-to-br from-sky-50 via-white to-sky-100/60",
+          accent: "text-sky-700 bg-sky-100/80 border-sky-200",
+          detalhe: "bg-sky-500",
+          borda: "border-sky-200/60",
+          sombra: "hover:shadow-sky-500/15",
+          btn: "bg-sky-600 hover:bg-sky-700 text-white",
         };
       case "amarelo":
         return {

@@ -93,7 +93,7 @@ export const SpreadsheetConnector: React.FC<SpreadsheetConnectorProps> = ({
       </div>
 
       {status === "success" && (
-        <div className="flex items-center gap-1.5 text-emerald-600 mt-2 font-medium">
+        <div className="flex items-center gap-1.5 text-sky-600 mt-2 font-medium">
           <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
           <span>{message}</span>
         </div>

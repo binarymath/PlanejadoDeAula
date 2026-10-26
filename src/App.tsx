@@ -21,6 +21,8 @@ import {
   Sparkles,
   Key,
   BookOpenCheck,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 
 import { LessonPlanState, initialLessonPlanState } from "./types/lessonPlan";
@@ -76,6 +78,7 @@ export const App: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<string>("identificacao");
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const [sidebarVisible, setSidebarVisible] = useState<boolean>(true);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [showPreviewModal, setShowPreviewModal] = useState<boolean>(false);
   const [showConfigLinksModal, setShowConfigLinksModal] = useState<boolean>(false);
@@ -155,9 +158,31 @@ export const App: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(true)}
+                aria-label="Ver seções do planejamento"
+                title="Abrir navegação das seções"
+                className="md:hidden inline-flex items-center gap-1.5 px-2.5 py-2 border border-slate-300 hover:border-sky-500 hover:bg-sky-50 text-slate-700 hover:text-sky-700 rounded-lg transition-colors text-xs font-semibold"
+              >
+                <Menu className="w-4 h-4" />
+                <span>Seções</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSidebarVisible((visible) => !visible)}
+                aria-label={sidebarVisible ? "Ocultar navegação" : "Mostrar navegação"}
+                title={sidebarVisible ? "Ocultar navegação e ampliar a área de edição" : "Mostrar navegação"}
+                className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-2 border border-slate-300 hover:border-sky-500 hover:bg-sky-50 text-slate-700 hover:text-sky-700 rounded-lg transition-colors text-xs font-semibold"
+              >
+                {sidebarVisible ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+                <span>{sidebarVisible ? "Ocultar navegação" : "Mostrar navegação"}</span>
+              </button>
+
               <span
                 className={`text-xs flex items-center gap-1 transition-opacity ${
-                  savedFeedback ? "opacity-100 text-emerald-600 font-medium" : "opacity-0"
+                  savedFeedback ? "opacity-100 text-sky-600 font-medium" : "opacity-0"
                 }`}
               >
                 <CheckCircle className="w-3.5 h-3.5" />
@@ -230,19 +255,30 @@ export const App: React.FC = () => {
 
           {/* Sidebar Encostada no Lado Esquerdo */}
           <aside
-            className={`fixed md:sticky top-0 md:top-16 z-50 md:z-20 h-full md:h-[calc(100vh-4rem)] w-72 md:w-80 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out ${
-              sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+            className={`fixed md:sticky top-0 md:top-16 z-50 md:z-20 h-full md:h-[calc(100vh-4rem)] w-72 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col transition-[width,transform] duration-300 ease-in-out ${
+              sidebarOpen ? "translate-x-0" : "-translate-x-full"
+            } ${
+              sidebarVisible ? "md:w-80 md:translate-x-0" : "md:w-0 md:-translate-x-full md:overflow-hidden md:border-r-0"
             } shadow-xl md:shadow-none`}
           >
-          {/* Cabeçalho do Sidebar (apenas no mobile para botão de fechar) */}
-          <div className="flex items-center justify-between p-4 border-b border-slate-100 md:hidden">
-            <span className="font-bold text-sm text-slate-800">Menu das Seções</span>
+          {/* Cabeçalho do menu com ação de recolher nomeada */}
+          <div className="flex items-center justify-between gap-2 p-4 border-b border-slate-100">
+            <span className="font-bold text-sm text-slate-800">Navegação do plano</span>
             <button
               type="button"
-              onClick={() => setSidebarOpen(false)}
-              className="p-1 text-slate-400 hover:text-slate-600 rounded-md"
+              onClick={() => {
+                if (window.matchMedia("(min-width: 768px)").matches) {
+                  setSidebarVisible(false);
+                } else {
+                  setSidebarOpen(false);
+                }
+              }}
+              aria-label="Recolher navegação"
+              title="Recolher navegação"
+              className="inline-flex items-center gap-1.5 px-2 py-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-md text-[11px] font-semibold whitespace-nowrap"
             >
-              <X className="w-5 h-5" />
+              <PanelLeftClose className="w-4 h-4" />
+              <span className="hidden sm:inline">Recolher</span>
             </button>
           </div>
 
@@ -302,7 +338,7 @@ export const App: React.FC = () => {
         </aside>
 
         {/* Conteúdo Principal do Módulo */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 min-w-0 overflow-y-auto">
+        <main className={`flex-1 min-w-0 overflow-y-auto ${activeTab === "cronograma" && !sidebarVisible ? "p-0" : "p-4 sm:p-6 lg:p-8"}`}>
           {/* Barra Mobile para Abrir Sidebar e Ver Seção Atual */}
           <div className="md:hidden flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 mb-4 shadow-2xs">
             <button
@@ -317,6 +353,19 @@ export const App: React.FC = () => {
               {tabs.find((t) => t.id === activeTab)?.title}
             </span>
           </div>
+
+          {activeTab === "cronograma" && !sidebarVisible && (
+            <div className="hidden md:flex justify-start px-4 pt-3">
+              <button
+                type="button"
+                onClick={() => setSidebarVisible(true)}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-slate-300 hover:border-sky-500 hover:bg-sky-50 text-slate-700 hover:text-sky-800 rounded-md text-xs font-semibold shadow-xs"
+              >
+                <PanelLeftOpen className="w-4 h-4" />
+                Mostrar navegação
+              </button>
+            </div>
+          )}
 
           {/* Renderização do Módulo Ativo */}
           <div>
@@ -333,7 +382,7 @@ export const App: React.FC = () => {
               <SocioemotionalModule data={data} onChange={handleFieldChange} />
             )}
             {activeTab === "cronograma" && (
-              <ScheduleModule data={data} onChange={handleFieldChange} />
+              <ScheduleModule data={data} onChange={handleFieldChange} fullWidth={!sidebarVisible} />
             )}
             {activeTab === "metodologia" && (
               <MethodologyModule data={data} onChange={handleFieldChange} />
