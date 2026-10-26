@@ -1,4 +1,4 @@
-import { FeriadoExcecao } from "../types/lessonPlan";
+import { FeriadoExcecao, TurmaPlanejada } from "../types/lessonPlan";
 
 const MESES_PT = [
   "JANEIRO",
@@ -96,14 +96,16 @@ export function gerarCronogramaPorDatas(
     // Sexta-feira da semana (segunda + 4 dias)
     const currentFriday = new Date(currentMonday);
     currentFriday.setDate(currentMonday.getDate() + 4);
+    const inicioSemana = new Date(Math.max(currentMonday.getTime(), start.getTime()));
+    const fimSemana = new Date(Math.min(currentFriday.getTime(), end.getTime()));
 
     // Mês predominante da semana (usamos a sexta ou a segunda)
-    const mesNome = MESES_PT[currentMonday.getMonth()];
+    const mesNome = MESES_PT[inicioSemana.getMonth()];
 
     // Verifica se há eventos dentro desta semana (Segunda a Sexta)
     const eventosNaSemana: string[] = [];
-    const checkDay = new Date(currentMonday);
-    for (let i = 0; i < 5; i++) {
+    const checkDay = new Date(inicioSemana);
+    while (checkDay <= fimSemana) {
       const dateKey = formatYYYYMMDD(checkDay);
       if (eventosMap.has(dateKey)) {
         const evts = eventosMap.get(dateKey)!;
@@ -116,7 +118,7 @@ export function gerarCronogramaPorDatas(
     }
 
     const obsEvento = eventosNaSemana.length > 0 ? ` [${eventosNaSemana.join(", ")}]` : "";
-    const linhaSemana = `${formatDDMM(currentMonday)} a ${formatDDMM(currentFriday)}: ${obsEvento}`;
+    const linhaSemana = `${formatDDMM(inicioSemana)} a ${formatDDMM(fimSemana)}: ${obsEvento}`;
 
     if (!mesesMap.has(mesNome)) {
       mesesMap.set(mesNome, []);
@@ -142,6 +144,10 @@ export interface SemanaCronogramaInfo {
   sextaFormatada: string;
   rotulo: string; // ex: "02/02 a 06/02"
   feriadosNaSemana: string[]; // ex: ["16/02 - Carnaval"]
+  diasLetivos: number;
+  aulasPrevistas: number;
+  aulasPorTurma: { nome: string; quantidade: number }[];
+  semanaCurta: boolean;
 }
 
 /**
@@ -150,7 +156,8 @@ export interface SemanaCronogramaInfo {
 export function obterSemanasEstruturadas(
   dataInicioStr: string,
   dataFimStr: string,
-  feriados: FeriadoExcecao[] = []
+  feriados: FeriadoExcecao[] = [],
+  turmas: TurmaPlanejada[] = []
 ): SemanaCronogramaInfo[] {
   if (!dataInicioStr || !dataFimStr) return [];
 
@@ -202,8 +209,16 @@ export function obterSemanasEstruturadas(
 
     const mesNome = MESES_PT[currentMonday.getMonth()];
     const feriadosNaSemana: string[] = [];
-    const checkDay = new Date(currentMonday);
-    for (let i = 0; i < 5; i++) {
+    const inicioSemana = new Date(Math.max(currentMonday.getTime(), start.getTime()));
+    const fimSemana = new Date(Math.min(currentFriday.getTime(), end.getTime()));
+    let diasLetivos = 0;
+    let aulasPrevistas = 0;
+    const aulasPorTurma = turmas.map((turma) => ({
+      nome: turma.nome || "Turma",
+      quantidade: 0,
+    }));
+    const checkDay = new Date(inicioSemana);
+    while (checkDay <= fimSemana) {
       const dateKey = formatYYYYMMDD(checkDay);
       if (eventosMap.has(dateKey)) {
         const evts = eventosMap.get(dateKey)!;
@@ -212,15 +227,44 @@ export function obterSemanasEstruturadas(
           feriadosNaSemana.push(`${formatDDMM(checkDay)} - ${e.motivo} (${tipoRotulo})`);
         });
       }
+
+      const eventosNoDia = eventosMap.get(dateKey) || [];
+      const diaSemAula = eventosNoDia.some((evento) => (evento.tipo ?? "nao_letivo") === "nao_letivo");
+      if (checkDay.getDay() >= 1 && checkDay.getDay() <= 5 && !diaSemAula) {
+        diasLetivos += 1;
+        if (turmas.length > 0) {
+          const chavesDia: Record<number, keyof TurmaPlanejada["aulasPorDia"]> = {
+            1: "seg",
+            2: "ter",
+            3: "qua",
+            4: "qui",
+            5: "sex",
+          };
+          const chave = chavesDia[checkDay.getDay()];
+          turmas.forEach((turma, indice) => {
+            aulasPorTurma[indice].quantidade += Number(turma.aulasPorDia[chave]) || 0;
+          });
+          aulasPrevistas += turmas.reduce(
+            (total, turma) => total + (Number(turma.aulasPorDia[chave]) || 0),
+            0
+          ) / turmas.length;
+        } else {
+          aulasPrevistas += 1;
+        }
+      }
       checkDay.setDate(checkDay.getDate() + 1);
     }
 
     lista.push({
       mes: mesNome,
-      segundaFormatada: formatDDMM(currentMonday),
-      sextaFormatada: formatDDMM(currentFriday),
-      rotulo: `${formatDDMM(currentMonday)} a ${formatDDMM(currentFriday)}`,
+      segundaFormatada: formatDDMM(inicioSemana),
+      sextaFormatada: formatDDMM(fimSemana),
+      rotulo: `${formatDDMM(inicioSemana)} a ${formatDDMM(fimSemana)}`,
       feriadosNaSemana,
+      diasLetivos,
+      aulasPrevistas,
+      aulasPorTurma,
+      semanaCurta: diasLetivos < 5,
     });
 
     currentMonday.setDate(currentMonday.getDate() + 7);

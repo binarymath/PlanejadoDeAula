@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   BookOpen,
   Sparkles,
@@ -10,6 +10,8 @@ import {
   Link,
   CheckCircle2,
   RefreshCw,
+  Eye,
+  X,
 } from "lucide-react";
 import { LessonPlanState } from "../../types/lessonPlan";
 import { getBimesterTitles } from "../../utils/bimesterHelper";
@@ -42,8 +44,10 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
 
   const [gruposAE, setGruposAE] = useState<GrupoAprendizagemEssencial[]>([]);
   const [selecionadasAE, setSelecionadasAE] = useState<Set<string>>(new Set());
+  const [grupoDetalhes, setGrupoDetalhes] = useState<GrupoAprendizagemEssencial | null>(null);
   const [carregando, setCarregando] = useState<boolean>(false);
   const [painelAberto, setPainelAberto] = useState<boolean>(true);
+  const requisicaoCurriculoRef = useRef(0);
 
   // Ano e bimestre selecionados
   const anoEscolarAtivo =
@@ -51,7 +55,19 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
   const bimestreAtivo = data.bimestre || "";
 
   const handleConectarPlanilha = async (urlParaConectar?: string) => {
+    const requisicaoAtual = ++requisicaoCurriculoRef.current;
     const url = (urlParaConectar ?? urlPlanilha).trim();
+    const componente = data.componenteCurricular.trim();
+
+    if (!componente) {
+      setErroMsg("Selecione o Componente Curricular na página de Identificação para carregar a aba correspondente.");
+      setPlanilhaConectada(false);
+      setGruposAE([]);
+      setSelecionadasAE(new Set());
+      setConectandoPlanilha(false);
+      return;
+    }
+
     if (!url) {
       setErroMsg("Por favor, cole o link da sua planilha de Currículo/Conteúdos.");
       setPlanilhaConectada(false);
@@ -62,18 +78,30 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
     try {
       setConectandoPlanilha(true);
       setErroMsg("");
-      const aulas = await obterAulasCurriculo(anoEscolarAtivo, bimestreAtivo, url);
+      setPlanilhaConectada(false);
+      setGruposAE([]);
+      setSelecionadasAE(new Set());
+      const aulas = await obterAulasCurriculo(
+        anoEscolarAtivo,
+        bimestreAtivo,
+        url,
+        componente
+      );
+      if (requisicaoAtual !== requisicaoCurriculoRef.current) return;
       const grupos = agruparPorAprendizagemEssencial(aulas);
       setGruposAE(grupos);
       setPlanilhaConectada(true);
       localStorage.setItem(STORAGE_CURRICULO_URL_KEY, url);
     } catch (err: any) {
+      if (requisicaoAtual !== requisicaoCurriculoRef.current) return;
       console.error("Erro ao conectar planilha de currículo:", err);
       setErroMsg(err.message || "Não foi possível carregar a planilha. Verifique as permissões de compartilhamento.");
       setPlanilhaConectada(false);
       setGruposAE([]);
     } finally {
-      setConectandoPlanilha(false);
+      if (requisicaoAtual === requisicaoCurriculoRef.current) {
+        setConectandoPlanilha(false);
+      }
     }
   };
 
@@ -81,7 +109,7 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
     if (urlPlanilha.trim()) {
       handleConectarPlanilha(urlPlanilha.trim());
     }
-  }, [anoEscolarAtivo, bimestreAtivo]);
+  }, [anoEscolarAtivo, bimestreAtivo, data.componenteCurricular]);
 
   // Ouvir atualizações de links (ex: via modal JSON ou troca de disciplina)
   useEffect(() => {
@@ -103,7 +131,7 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
       window.removeEventListener("storage_links_updated", handleStorageChange);
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, [urlPlanilha, anoEscolarAtivo, bimestreAtivo]);
+  }, [urlPlanilha, anoEscolarAtivo, bimestreAtivo, data.componenteCurricular]);
 
 
 
@@ -167,6 +195,15 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
     onChange("objetosConhecimento", formatarGruposParaTexto(novos));
   };
 
+  useEffect(() => {
+    if (!grupoDetalhes) return;
+    const fecharComEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setGrupoDetalhes(null);
+    };
+    window.addEventListener("keydown", fecharComEscape);
+    return () => window.removeEventListener("keydown", fecharComEscape);
+  }, [grupoDetalhes]);
+
   // Marcar todas as AEs do bimestre
   const handleSelectAll = () => {
     const novos = new Set(gruposAE.map((g) => g.id));
@@ -205,7 +242,7 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
             <Layers className="w-4 h-4 text-indigo-600" />
             <span>
-              Currículo Oficial{anoEscolarAtivo ? ` • ${anoEscolarAtivo}` : ""}{bimestreAtivo ? ` (${bimestreAtivo})` : ""}
+              Currículo Oficial{data.componenteCurricular ? ` • ${data.componenteCurricular}` : ""}{anoEscolarAtivo ? ` • ${anoEscolarAtivo}` : ""}{bimestreAtivo ? ` (${bimestreAtivo})` : ""}
             </span>
             <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded font-medium text-[11px]">
               {gruposAE.length} Aprendizagens Essenciais
@@ -326,7 +363,6 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
                   return (
                     <div
                       key={g.id}
-                      onClick={() => handleToggleAE(g)}
                       className={`flex items-start gap-2.5 p-3 rounded-lg cursor-pointer transition-colors ${
                         isChecked
                           ? "bg-indigo-50/70 border border-indigo-200/80"
@@ -335,6 +371,9 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
                     >
                       <button
                         type="button"
+                        onClick={() => handleToggleAE(g)}
+                        aria-label={isChecked ? "Desmarcar aprendizagem" : "Marcar aprendizagem"}
+                        aria-pressed={isChecked}
                         className="mt-0.5 text-indigo-600 flex-shrink-0"
                       >
                         {isChecked ? (
@@ -345,9 +384,14 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
                       </button>
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-slate-800 leading-snug">
+                        <button
+                          type="button"
+                          onClick={() => setGrupoDetalhes(g)}
+                          aria-haspopup="dialog"
+                          className="block w-full text-left text-xs font-semibold text-slate-800 leading-snug hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+                        >
                           {g.aprendizagemEssencial}
-                        </p>
+                        </button>
 
                         <div className="mt-1.5 space-y-1 text-[11px] text-slate-500">
                           {g.habilidades.length > 0 && (
@@ -376,8 +420,20 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
                             <span className="font-semibold text-indigo-700 bg-indigo-100/70 px-1.5 py-0.2 rounded">
                               {g.aulasCount} aulas planejadas
                             </span>
+                            <button
+                              type="button"
+                              onClick={() => setGrupoDetalhes(g)}
+                              aria-label="Ver todos os detalhes"
+                              aria-haspopup="dialog"
+                              title="Ver detalhes da aprendizagem"
+                              className="inline-flex items-center gap-1 text-indigo-700 hover:text-indigo-900 font-semibold"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Ver detalhes</span>
+                            </button>
                           </div>
                         </div>
+
                       </div>
                     </div>
                   );
@@ -404,6 +460,104 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
           Dica: Os itens marcados acima preenchem este campo com a Aprendizagem Essencial, Habilidades associadas, Objetos de Conhecimento e contagem de aulas sugerida. Você pode personalizar ou editar livremente.
         </p>
       </div>
+
+      {grupoDetalhes && (
+        <div
+          className="fixed inset-0 z-[120] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setGrupoDetalhes(null);
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="aprendizagem-modal-title"
+            className="bg-white rounded-xl w-full max-w-[min(92vw,72rem)] shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]"
+          >
+            <header className="px-5 py-4 bg-indigo-50 border-b border-indigo-100 flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold uppercase text-indigo-700">
+                  {data.componenteCurricular || "Componente curricular"} {anoEscolarAtivo ? `• ${anoEscolarAtivo}` : ""}
+                </p>
+                <h2 id="aprendizagem-modal-title" className="mt-1 text-base font-bold leading-snug text-slate-900">
+                  {grupoDetalhes.aprendizagemEssencial}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setGrupoDetalhes(null)}
+                aria-label="Fechar detalhes"
+                className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-white rounded-md"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </header>
+
+            <div className="p-5 overflow-y-auto space-y-5 text-sm text-slate-700">
+              <section>
+                <h3 className="font-bold text-slate-900">Aulas planejadas ({grupoDetalhes.aulas.length})</h3>
+                {grupoDetalhes.aulas.length > 0 ? (
+                  <ol className="mt-2 space-y-2">
+                    {grupoDetalhes.aulas.map((aula, index) => (
+                      <li key={`${aula.numero}-${index}`} className="flex gap-3 border-b border-slate-100 pb-2 last:border-0">
+                        <span className="font-semibold text-indigo-700">Aula {aula.numero}</span>
+                        <span>{aula.conteudo || "Conteúdo não informado"}</span>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="mt-1 text-slate-500">Não há aulas detalhadas para esta aprendizagem.</p>
+                )}
+              </section>
+
+              {grupoDetalhes.habilidades.length > 0 && (
+                <section>
+                  <h3 className="font-bold text-slate-900">Habilidades</h3>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {grupoDetalhes.habilidades.map((habilidade, index) => (
+                      <span key={`${habilidade}-${index}`} className="px-2 py-1 bg-sky-50 text-sky-800 border border-sky-100 rounded-md text-xs">
+                        {habilidade}
+                      </span>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {grupoDetalhes.conteudos.length > 0 && (
+                <section>
+                  <h3 className="font-bold text-slate-900">Objetos de conhecimento</h3>
+                  <ul className="mt-2 list-disc list-inside space-y-1">
+                    {grupoDetalhes.conteudos.map((conteudo, index) => <li key={`${conteudo}-${index}`}>{conteudo}</li>)}
+                  </ul>
+                </section>
+              )}
+
+              {grupoDetalhes.descritoresSaresp.length > 0 && (
+                <section>
+                  <h3 className="font-bold text-slate-900">Descritores</h3>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {grupoDetalhes.descritoresSaresp.map((descritor, index) => (
+                      <span key={`${descritor}-${index}`} className="px-2 py-1 bg-amber-50 text-amber-800 border border-amber-100 rounded-md text-xs">
+                        {descritor}
+                      </span>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+
+            <footer className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setGrupoDetalhes(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-md"
+              >
+                Fechar
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
     </div>
   );
 };

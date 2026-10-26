@@ -94,6 +94,9 @@ export const App: React.FC = () => {
     setData((prev) => ({
       ...prev,
       [field]: value,
+      ...(field === "componenteCurricular" && prev.componenteCurricular !== value
+        ? { objetosConhecimento: "" }
+        : {}),
     }));
   };
 

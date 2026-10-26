@@ -22,9 +22,58 @@ export interface GrupoAprendizagemEssencial {
   id: string;
   aprendizagemEssencial: string;
   aulasCount: number;
+  aulas: { numero: number; conteudo: string }[];
   conteudos: string[];
   habilidades: string[];
   descritoresSaresp: string[];
+}
+
+function normalizarNomeAba(nome: string): string {
+  return nome
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function encontrarAbaDisciplina(nomesAbas: string[], disciplina: string): string | undefined {
+  const disciplinaNormalizada = normalizarNomeAba(disciplina);
+  if (!disciplinaNormalizada) return undefined;
+
+  return nomesAbas.find((nome) => normalizarNomeAba(nome) === disciplinaNormalizada)
+    || nomesAbas.find((nome) => {
+      const nomeNormalizado = normalizarNomeAba(nome);
+      return nomeNormalizado && (
+        nomeNormalizado.includes(disciplinaNormalizada)
+        || disciplinaNormalizada.includes(nomeNormalizado)
+      );
+    });
+}
+
+function correspondeAnoEscolar(anoLinha: string, anoSelecionado: string): boolean {
+  if (!anoLinha || !anoSelecionado) return true;
+  const numeroLinha = anoLinha.match(/[6-9]/)?.[0];
+  const numeroSelecionado = anoSelecionado.match(/[6-9]/)?.[0];
+  return !numeroLinha || !numeroSelecionado || numeroLinha === numeroSelecionado;
+}
+
+function normalizarUrlPlanilha(url: string): string {
+  try {
+    const parsedUrl = new URL(url);
+    const publicado = parsedUrl.pathname.match(/\/spreadsheets\/d\/e\/([^/]+)\/(?:pub|pubhtml)/);
+    if (publicado) {
+      return `${parsedUrl.origin}/spreadsheets/d/e/${publicado[1]}/pub?output=xlsx`;
+    }
+
+    const planilha = parsedUrl.pathname.match(/\/spreadsheets\/d\/([^/]+)/);
+    if (planilha) {
+      return `${parsedUrl.origin}/spreadsheets/d/${planilha[1]}/export?format=xlsx`;
+    }
+  } catch {
+    return url;
+  }
+
+  return url;
 }
 
 
@@ -35,14 +84,15 @@ export interface GrupoAprendizagemEssencial {
 export async function obterAulasCurriculo(
   anoTexto: string,
   bimestreTexto: string,
-  customUrl?: string
+  customUrl?: string,
+  componenteCurricular?: string
 ): Promise<AulaCurriculoItem[]> {
   // 1. Detectar o ano escolar
   const anoNorm = anoTexto || "";
-  let sheetName = "6º Ano";
-  if (anoNorm.includes("7")) sheetName = "7º Ano";
-  else if (anoNorm.includes("8")) sheetName = "8º Ano";
-  else if (anoNorm.includes("9")) sheetName = "9º Ano";
+  let abaAno = "6º Ano";
+  if (anoNorm.includes("7")) abaAno = "7º Ano";
+  else if (anoNorm.includes("8")) abaAno = "8º Ano";
+  else if (anoNorm.includes("9")) abaAno = "9º Ano";
 
   // 2. Detectar o bimestre
   const bimNorm = bimestreTexto || "1º Bimestre";
@@ -50,29 +100,48 @@ export async function obterAulasCurriculo(
   const bimEsperado = `${bimNumero}º Bimestre`;
 
   const rawUrl = (customUrl || CURRICULO_XLSX_URL).trim();
-  let targetUrl = rawUrl;
-  const match = rawUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-  if (match) {
-    targetUrl = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=xlsx`;
-  }
+  const targetUrl = normalizarUrlPlanilha(rawUrl);
 
   // Tenta carregar da planilha remota se uma URL válida for configurada (cache compartilhado)
   let planilha: PlanilhaParseada | null = null;
+  let erroLeitura: unknown;
   try {
     if (targetUrl) {
       planilha = await obterPlanilha(targetUrl);
     }
+  } catch (err) {
+    erroLeitura = err instanceof TypeError && /fetch/i.test(err.message)
+      ? new Error("Falha ao buscar a planilha. Verifique se o link está acessível sem login e se a planilha foi compartilhada ou publicada na Web.")
+      : err;
+    console.warn("Erro ao ler planilha de currículo:", err);
+  }
 
-    if (planilha && planilha.sheets[sheetName]) {
-      const rows: any[][] = planilha.sheets[sheetName];
+  if (planilha) {
+    const abaDisciplina = componenteCurricular
+      ? encontrarAbaDisciplina(planilha.sheetNames, componenteCurricular)
+      : undefined;
+
+    if (componenteCurricular && !abaDisciplina) {
+      throw new Error(
+        `Não foi encontrada uma aba para a disciplina "${componenteCurricular}". Abas disponíveis: ${planilha.sheetNames.join(", ")}.`
+      );
+    }
+
+    const sheetName = abaDisciplina || abaAno;
+    const rows = planilha.sheets[sheetName];
+    if (rows) {
       const itens: AulaCurriculoItem[] = [];
       rows.slice(1).forEach((r, idx) => {
         const [ano, bim, aula, conteudo, objetivos, habs, ae, descritor] = r;
+        const anoRow = String(ano || "").trim();
         const bimRow = String(bim || "").trim();
-        if (bimRow.includes(`${bimNumero}º`)) {
+        if (
+          correspondeAnoEscolar(anoRow, anoNorm)
+          && bimRow.includes(`${bimNumero}º`)
+        ) {
           itens.push({
             id: `${sheetName}_${idx + 1}`,
-            anoEscolar: String(ano || sheetName).trim(),
+            anoEscolar: anoRow || abaAno,
             bimestre: bimRow,
             aula: Number(aula) || idx + 1,
             conteudo: String(conteudo || "").trim(),
@@ -84,9 +153,19 @@ export async function obterAulasCurriculo(
         }
       });
       if (itens.length > 0) return itens;
+
+      // A aba remota selecionada é a fonte da disciplina; não substitua dados vazios por Matemática local.
+      return [];
     }
-  } catch (err) {
-    console.warn("Erro ao ler planilha de currículo:", err);
+  }
+
+  if (componenteCurricular && erroLeitura) {
+    throw erroLeitura;
+  }
+
+  // Sem uma leitura válida da aba da disciplina, não use o catálogo local exclusivo de Matemática.
+  if (componenteCurricular) {
+    return [];
   }
 
   // Se não foi informada ou conectada nenhuma planilha, não traz dados pré-definidos
@@ -95,7 +174,7 @@ export async function obterAulasCurriculo(
   }
 
   // Fallback nos dados locais catalogados somente se o usuário estava tentando ler uma planilha existente
-  const localAba = (curriculoLocal as Record<string, AulaCurriculoItem[]>)[sheetName] || [];
+  const localAba = (curriculoLocal as Record<string, AulaCurriculoItem[]>)[abaAno] || [];
   return localAba.filter((item) => item.bimestre.includes(`${bimNumero}º`));
 }
 
@@ -116,6 +195,7 @@ export function agruparPorAprendizagemEssencial(
         id: ae,
         aprendizagemEssencial: ae,
         aulasCount: 0,
+        aulas: [],
         conteudos: [],
         habilidades: [],
         descritoresSaresp: [],
@@ -124,6 +204,7 @@ export function agruparPorAprendizagemEssencial(
 
     const g = gruposMap.get(ae)!;
     g.aulasCount += 1;
+    g.aulas.push({ numero: item.aula, conteudo: item.conteudo });
     if (item.conteudo && !g.conteudos.includes(item.conteudo)) {
       g.conteudos.push(item.conteudo);
     }

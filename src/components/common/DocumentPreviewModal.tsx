@@ -98,10 +98,10 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           >
             
             {/* CABEÇALHO COM LOGO OCUPANDO 100% DA LARGURA */}
-            {(hasLogo || true) && (
+            {hasLogo && (
               <div className="w-full mb-4 pb-2 border-b-2 border-slate-700/60 print:border-b-2 print:border-black flex items-center justify-center">
                 <img
-                  src={hasLogo ? data.logoEscolaBase64 : "/logo_educacao.png"}
+                  src={data.logoEscolaBase64}
                   alt="Logo"
                   className="w-full h-auto object-contain max-h-36 block"
                 />
