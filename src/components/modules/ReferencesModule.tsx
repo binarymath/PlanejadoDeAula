@@ -2,12 +2,12 @@ import React, { useState, useEffect } from "react";
 import {
   Library,
   ExternalLink,
+  Download,
   RefreshCw,
   Check,
   CheckCircle2,
   FileText,
   BookmarkCheck,
-  BookOpen,
   Sparkles,
   Search,
   Link
@@ -16,6 +16,7 @@ import { LessonPlanState } from "../../types/lessonPlan";
 import {
   ReferenciaItem,
   fetchReferenciasPlanilha,
+  REFERENCIAS_PADRAO
 } from "../../services/referencesService";
 
 const STORAGE_KEY_URL_REFERENCIAS = "planejador_url_planilha_referencias";
@@ -29,7 +30,7 @@ export const ReferencesModule: React.FC<ReferencesModuleProps> = ({
   data,
   onChange,
 }) => {
-  const [referencias, setReferencias] = useState<ReferenciaItem[]>([]);
+  const [referencias, setReferencias] = useState<ReferenciaItem[]>(REFERENCIAS_PADRAO);
   const [loading, setLoading] = useState(false);
   const [selectedTitles, setSelectedTitles] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,9 +43,9 @@ export const ReferencesModule: React.FC<ReferencesModuleProps> = ({
   const conectarPlanilha = async (urlParaConectar?: string) => {
     const urlAlvo = (urlParaConectar !== undefined ? urlParaConectar : urlPlanilha).trim();
     if (!urlAlvo) {
-      setReferencias([]);
+      setReferencias(REFERENCIAS_PADRAO);
       setPlanilhaConectada(false);
-      setErroMsg("Insira o link da planilha de referências para conectar.");
+      setErroMsg("Insira o link da planilha de referências para conectar (exibindo catálogo oficial padrão).");
       return;
     }
 
@@ -60,17 +61,20 @@ export const ReferencesModule: React.FC<ReferencesModuleProps> = ({
       localStorage.setItem(STORAGE_KEY_URL_REFERENCIAS, urlAlvo);
     } catch (err: any) {
       setPlanilhaConectada(false);
-      setErroMsg(err.message || "Erro ao conectar e processar planilha.");
+      setReferencias(REFERENCIAS_PADRAO);
+      setErroMsg(err.message || "Erro ao conectar e processar planilha. Exibindo referências oficiais padrão.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Se já havia URL salva no localStorage, conecta automaticamente
+  // Se já havia URL salva no localStorage, conecta automaticamente; senão usa as oficiais homologadas
   useEffect(() => {
     const salva = localStorage.getItem(STORAGE_KEY_URL_REFERENCIAS);
-    if (salva) {
-      conectarPlanilha(salva);
+    if (salva && salva.trim()) {
+      conectarPlanilha(salva.trim());
+    } else {
+      setReferencias(REFERENCIAS_PADRAO);
     }
   }, []);
 
@@ -84,7 +88,12 @@ export const ReferencesModule: React.FC<ReferencesModuleProps> = ({
   }, [data.referenciasApoio, referencias]);
 
   const handleReload = () => {
-    conectarPlanilha();
+    if (urlPlanilha.trim()) {
+      conectarPlanilha();
+    } else {
+      setReferencias(REFERENCIAS_PADRAO);
+      setPlanilhaConectada(false);
+    }
   };
 
   // Gerar texto formatado com todas as referências da planilha
@@ -114,7 +123,8 @@ export const ReferencesModule: React.FC<ReferencesModuleProps> = ({
       onChange("referenciasApoio", updated);
     } else {
       // Adiciona ao texto
-      const novoBloco = `• [${item.titulo}]: ${rCategoriaTexto(item)} (${item.url})`;
+      const linkParte = item.url ? ` (${item.url})` : "";
+      const novoBloco = `• [${item.titulo}]: ${rCategoriaTexto(item)}${linkParte}`;
       const updated = current ? `${current}\n\n${novoBloco}` : novoBloco;
       onChange("referenciasApoio", updated);
     }
@@ -158,19 +168,18 @@ export const ReferencesModule: React.FC<ReferencesModuleProps> = ({
             onClick={handleReload}
             disabled={loading}
             className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            title="Recarregar dados"
+            title="Recarregar referências"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
           </button>
         </div>
-
       </div>
 
       {/* Barra de Conexão com a Planilha de Referências */}
       <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
         <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
           <Link className="w-3.5 h-3.5 text-blue-600" />
-          Link da Planilha Google (Referências Bibliográficas):
+          Link da Planilha Google (Referências Bibliográficas Opcionais):
         </label>
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
@@ -184,7 +193,7 @@ export const ReferencesModule: React.FC<ReferencesModuleProps> = ({
                 setUrlPlanilha(e.target.value);
                 if (planilhaConectada) setPlanilhaConectada(false);
               }}
-              placeholder="Cole aqui o link da planilha de referências (ex: https://docs.google.com/spreadsheets/d/...)"
+              placeholder="Cole aqui o link da sua planilha personalizada (ou deixe vazio para usar o catálogo oficial padrão)"
               className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono text-[11px]"
             />
           </div>
@@ -200,27 +209,33 @@ export const ReferencesModule: React.FC<ReferencesModuleProps> = ({
           </button>
         </div>
 
-        {planilhaConectada && (
+        {planilhaConectada ? (
           <div className="flex items-center gap-1.5 text-emerald-600 text-[11px] font-medium pt-1">
             <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
             <span>Planilha de referências conectada ({referencias.length} fontes identificadas).</span>
           </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-slate-500 text-[11px] font-medium pt-1">
+            <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+            <span>Utilizando catálogo homologado oficial (SEDUC-SP, BNCC, CMSP e Currículo Paulista).</span>
+          </div>
         )}
 
         {erroMsg && (
-          <p className="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+          <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
             {erroMsg}
           </p>
         )}
       </div>
 
-      {planilhaConectada && (
+      {/* Painel de Recursos (Visível com o Catálogo Homologado ou Planilha Conectada) */}
+      {referencias.length > 0 && (
         <div className="bg-gradient-to-br from-slate-50 to-blue-50/20 border border-slate-200 rounded-xl p-4 sm:p-5 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <BookmarkCheck className="w-4 h-4 text-blue-600" />
               <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-                Fontes Oficiais Homologadas ({referencias.length} recursos)
+                {planilhaConectada ? "Fontes da Planilha Conectada" : "Fontes Oficiais Homologadas"} ({referencias.length} recursos)
               </span>
               <span className="text-xs font-semibold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded-full">
                 {selectedTitles.length} selecionado{selectedTitles.length !== 1 ? "s" : ""}
@@ -244,6 +259,10 @@ export const ReferencesModule: React.FC<ReferencesModuleProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {filteredReferencias.map((ref) => {
               const isSelected = selectedTitles.includes(ref.titulo);
+              const isDownload =
+                ref.linkTexto?.toLowerCase().includes("download") ||
+                ref.url?.toLowerCase().includes(".pdf") ||
+                ref.url?.toLowerCase().includes("download");
 
               return (
                 <div
@@ -288,10 +307,35 @@ export const ReferencesModule: React.FC<ReferencesModuleProps> = ({
                     )}
                   </div>
 
+                  {/* Barra de ação do Card com botão direto de Acessar ou Download */}
                   <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600">
-                      <span>{ref.linkTexto || "Material de Apoio"}</span>
-                    </span>
+                    {ref.url ? (
+                      <a
+                        href={ref.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Evita marcar/desmarcar o card ao clicar no botão
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all shadow-2xs hover:shadow-xs ${
+                          isDownload
+                            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                            : "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                        }`}
+                        title={`${ref.linkTexto || (isDownload ? "Download" : "Acessar")} (Abre em nova guia)`}
+                      >
+                        {isDownload ? (
+                          <Download className="w-3.5 h-3.5" />
+                        ) : (
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        )}
+                        <span>{ref.linkTexto || (isDownload ? "Download" : "Acessar Link")}</span>
+                      </a>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400">
+                        <span>{ref.linkTexto || "Material de Apoio"}</span>
+                      </span>
+                    )}
 
                     <span className="text-[11px] text-slate-400 font-mono">
                       Item {ref.item}
@@ -302,34 +346,34 @@ export const ReferencesModule: React.FC<ReferencesModuleProps> = ({
             })}
           </div>
 
-        {/* Botões de Ação Rápida */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/80">
-          <p className="text-xs text-slate-500 flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-            <span>Clique nos cards para selecionar ou utilize os botões rápidos:</span>
-          </p>
+          {/* Botões de Ação Rápida */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/80">
+            <p className="text-xs text-slate-500 flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+              <span>Clique nos cards para selecionar ou utilize os botões rápidos:</span>
+            </p>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={aplicarTodasReferencias}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Inserir Todas (Completo com Links)</span>
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={aplicarTodasReferencias}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Inserir Todas (Completo com Links)</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={aplicarFormatoCompacto}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition-colors"
-            >
-              <FileText className="w-3.5 h-3.5 text-slate-500" />
-              <span>Formato Tópicos</span>
-            </button>
+              <button
+                type="button"
+                onClick={aplicarFormatoCompacto}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition-colors"
+              >
+                <FileText className="w-3.5 h-3.5 text-slate-500" />
+                <span>Formato Tópicos</span>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
       )}
 
       {/* Campo de Texto Final para o Documento */}
@@ -358,4 +402,3 @@ export const ReferencesModule: React.FC<ReferencesModuleProps> = ({
     </div>
   );
 };
-
