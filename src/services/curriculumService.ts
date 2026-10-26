@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import { obterPlanilha, PlanilhaParseada } from "./sheetCache";
 import curriculoLocal from "../config/curriculo_matematica.json";
 
 export const CURRICULO_SHEET_ID = "";
@@ -27,8 +27,6 @@ export interface GrupoAprendizagemEssencial {
   descritoresSaresp: string[];
 }
 
-let cachedCurriculoWorkbook: XLSX.WorkBook | null = null;
-let cachedCurriculoUrl = "";
 
 /**
  * Obtém todas as aulas do ano e bimestre informados,
@@ -58,26 +56,15 @@ export async function obterAulasCurriculo(
     targetUrl = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=xlsx`;
   }
 
-  // Tenta carregar da planilha remota se uma URL válida for configurada
+  // Tenta carregar da planilha remota se uma URL válida for configurada (cache compartilhado)
+  let planilha: PlanilhaParseada | null = null;
   try {
     if (targetUrl) {
-      if (!cachedCurriculoWorkbook || cachedCurriculoUrl !== targetUrl) {
-        const resp = await fetch(targetUrl);
-        if (resp.ok) {
-          const ab = await resp.arrayBuffer();
-          cachedCurriculoWorkbook = XLSX.read(ab, { type: "array" });
-          cachedCurriculoUrl = targetUrl;
-        }
-      }
+      planilha = await obterPlanilha(targetUrl);
     }
 
-
-
-    if (cachedCurriculoWorkbook && cachedCurriculoWorkbook.Sheets[sheetName]) {
-      const rows: any[][] = XLSX.utils.sheet_to_json(cachedCurriculoWorkbook.Sheets[sheetName], {
-        header: 1,
-        defval: "",
-      });
+    if (planilha && planilha.sheets[sheetName]) {
+      const rows: any[][] = planilha.sheets[sheetName];
       const itens: AulaCurriculoItem[] = [];
       rows.slice(1).forEach((r, idx) => {
         const [ano, bim, aula, conteudo, objetivos, habs, ae, descritor] = r;
@@ -103,7 +90,7 @@ export async function obterAulasCurriculo(
   }
 
   // Se não foi informada ou conectada nenhuma planilha, não traz dados pré-definidos
-  if (!targetUrl && !cachedCurriculoWorkbook) {
+  if (!targetUrl) {
     return [];
   }
 

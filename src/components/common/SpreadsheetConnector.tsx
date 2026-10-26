@@ -30,7 +30,7 @@ export const SpreadsheetConnector: React.FC<SpreadsheetConnectorProps> = ({
       setStatus("idle");
       setMessage("Conectando e lendo a planilha...");
 
-      const rows = await fetchSpreadsheetData(currentUrl, config.sheetTabName);
+      const rows = await fetchSpreadsheetData(currentUrl, config.sheetTabName, true);
 
       if (rows.length === 0) {
         setStatus("error");

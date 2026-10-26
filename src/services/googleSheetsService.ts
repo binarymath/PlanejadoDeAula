@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import { obterPlanilha, linhasDaAba, PlanilhaParseada } from "./sheetCache";
 
 export const GOOGLE_SHEET_ID = "";
 export const GOOGLE_SHEET_XLSX_URL = GOOGLE_SHEET_ID
@@ -30,32 +30,19 @@ export function normalizarGoogleSheetsXlsxUrl(rawUrl: string): string {
   return trimmed;
 }
 
-// Cache em memória de workbooks por URL normalizada para suportar múltiplas planilhas simultâneas
-const workbookCache = new Map<string, XLSX.WorkBook>();
-
 /**
- * Baixa e armazena em cache o XLSX completo da planilha caso configurada
+ * Obtém a planilha (já convertida em linhas por aba) a partir do cache compartilhado.
+ * O cache deduplica downloads simultâneos, persiste no IndexedDB e processa o XLSX em um Web Worker.
  */
-export async function getGoogleWorkbook(customUrl?: string): Promise<XLSX.WorkBook | null> {
+export async function getGoogleWorkbook(
+  customUrl?: string,
+  opcoes?: { forcar?: boolean }
+): Promise<PlanilhaParseada | null> {
   const targetUrl = normalizarGoogleSheetsXlsxUrl(customUrl || GOOGLE_SHEET_XLSX_URL);
   if (!targetUrl) {
     return null;
   }
-
-  if (workbookCache.has(targetUrl)) {
-    return workbookCache.get(targetUrl)!;
-  }
-
-  // Tenta baixar via fetch
-  const response = await fetch(targetUrl);
-  if (!response.ok) {
-    throw new Error(`Falha ao conectar à planilha. Status: ${response.status}`);
-  }
-
-  const arrayBuffer = await response.arrayBuffer();
-  const wb = XLSX.read(arrayBuffer, { type: "array" });
-  workbookCache.set(targetUrl, wb);
-  return wb;
+  return obterPlanilha(targetUrl, opcoes);
 }
 
 /**
@@ -63,7 +50,7 @@ export async function getGoogleWorkbook(customUrl?: string): Promise<XLSX.WorkBo
  */
 export async function getSheetNames(customUrl?: string): Promise<string[]> {
   const wb = await getGoogleWorkbook(customUrl);
-  return wb ? wb.SheetNames : [];
+  return wb ? wb.sheetNames : [];
 }
 
 
@@ -181,11 +168,11 @@ export async function obterTurmasDaPlanilhaDiagnostico(
   customUrl?: string
 ): Promise<string[]> {
   const wb = await getGoogleWorkbook(customUrl);
-  if (!wb || !wb.SheetNames) return [];
+  if (!wb || !wb.sheetNames) return [];
 
   const turmasSet = new Set<string>();
 
-  wb.SheetNames.forEach((aba) => {
+  wb.sheetNames.forEach((aba) => {
     // Abas seguem padrão como "6A-1B", "7B-2B", "8C", "9A", etc.
     const match = aba.match(/^([1-9][A-Za-z])/);
     if (match) {
@@ -314,12 +301,10 @@ export async function obterDisciplinasDaPlanilhaDiagnostico(
   if (!wb) return [];
 
   const disciplinasSet = new Set<string>();
-  const abasParaVarredura = abaNome && wb.Sheets[abaNome] ? [abaNome] : wb.SheetNames;
+  const abasParaVarredura = abaNome && wb.sheets[abaNome] ? [abaNome] : wb.sheetNames;
 
   abasParaVarredura.forEach((aba) => {
-    const ws = wb.Sheets[aba];
-    if (!ws) return;
-    const rawRows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+    const rawRows = linhasDaAba(wb, aba);
     rawRows.forEach((row) => {
       if (!row || row.length < 4) return;
       const compBruto = String(row[3] || "").trim(); // Coluna D (índice 3)
@@ -348,11 +333,9 @@ export async function carregarDescritoresDaAba(
   customUrl?: string
 ): Promise<DescritorHabilidade[]> {
   const wb = await getGoogleWorkbook(customUrl);
-  if (!wb) return [];
-  const ws = wb.Sheets[abaNome];
-  if (!ws) return [];
+  if (!wb || !wb.sheets[abaNome]) return [];
 
-  const rawRows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+  const rawRows = linhasDaAba(wb, abaNome);
   const descritores: DescritorHabilidade[] = [];
 
   const compFiltroNorm = componenteFiltro ? normalizarTexto(limparNomeComponente(componenteFiltro)) : "";

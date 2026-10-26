@@ -1,38 +1,35 @@
-import * as XLSX from "xlsx";
+import { obterPlanilha, linhasDaAba, linhasParaObjetos } from "./sheetCache";
 
 /**
  * Utilitário para buscar e ler dados de uma planilha (CSV, XLSX, Google Sheets)
  * @param url Endereço da planilha (URL da web ou caminho local /public)
  * @param sheetTab Nome opcional da aba
+ * @param forcar Ignora o cache e baixa a versão mais recente
  */
-export async function fetchSpreadsheetData(url: string, sheetTab?: string): Promise<Record<string, any>[]> {
+export async function fetchSpreadsheetData(
+  url: string,
+  sheetTab?: string,
+  forcar = false
+): Promise<Record<string, any>[]> {
   if (!url || !url.trim()) {
     throw new Error("Nenhum endereço de planilha informado.");
   }
 
   const cleanUrl = url.trim();
 
-  // Caso seja Google Sheets publicado ou link direto
-  const response = await fetch(cleanUrl);
-  if (!response.ok) {
-    throw new Error(`Falha ao carregar a planilha. Status: ${response.status} ${response.statusText}`);
-  }
+  // Caso seja Google Sheets publicado ou link direto (cache compartilhado + Web Worker)
+  const planilha = await obterPlanilha(cleanUrl, { forcar });
 
-  const arrayBuffer = await response.arrayBuffer();
-  const workbook = XLSX.read(arrayBuffer, { type: "array" });
-
-  const targetSheetName = sheetTab && workbook.SheetNames.includes(sheetTab)
+  const targetSheetName = sheetTab && planilha.sheetNames.includes(sheetTab)
     ? sheetTab
-    : workbook.SheetNames[0];
+    : planilha.sheetNames[0];
 
-  const worksheet = workbook.Sheets[targetSheetName];
-  if (!worksheet) {
+  if (!targetSheetName || !planilha.sheets[targetSheetName]) {
     return [];
   }
 
   // Converte a aba em lista de objetos JSON
-  const data = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, { defval: "" });
-  return data;
+  return linhasParaObjetos(linhasDaAba(planilha, targetSheetName));
 }
 
 /**

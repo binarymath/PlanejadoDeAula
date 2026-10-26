@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import { obterPlanilha, linhasDaAba } from "./sheetCache";
 import metodologiasLocais from "../config/metodologias_ativas.json";
 
 export const METODOLOGIAS_SHEET_ID = "";
@@ -16,8 +16,6 @@ export interface MetodologiaAtivaItem {
   modalidadeRecomendada: string; // Coluna I (ou Col F): "Individual", "Toda a Turma", "Em Grupo", etc.
 }
 
-let cachedMetodologiasWorkbook: XLSX.WorkBook | null = null;
-let cachedMetodologiasUrl = "";
 
 export async function carregarMetodologiasAtivas(customUrl?: string): Promise<MetodologiaAtivaItem[]> {
   const rawUrl = (customUrl || METODOLOGIAS_XLSX_URL).trim();
@@ -29,22 +27,8 @@ export async function carregarMetodologiasAtivas(customUrl?: string): Promise<Me
 
   try {
     if (targetUrl) {
-      if (!cachedMetodologiasWorkbook || cachedMetodologiasUrl !== targetUrl) {
-        const resp = await fetch(targetUrl);
-        if (resp.ok) {
-          const ab = await resp.arrayBuffer();
-          cachedMetodologiasWorkbook = XLSX.read(ab, { type: "array" });
-          cachedMetodologiasUrl = targetUrl;
-        }
-      }
-    }
-
-
-
-    if (cachedMetodologiasWorkbook) {
-      const sheetName = cachedMetodologiasWorkbook.SheetNames[0];
-      const ws = cachedMetodologiasWorkbook.Sheets[sheetName];
-      const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+      const planilha = await obterPlanilha(targetUrl);
+      const rows = linhasDaAba(planilha, planilha.sheetNames[0]);
       const itens: MetodologiaAtivaItem[] = [];
 
       rows.slice(1).forEach((r, idx) => {
