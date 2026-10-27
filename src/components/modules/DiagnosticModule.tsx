@@ -183,11 +183,66 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
   // Nível escolar detectado da turma alvo
   const nivelAlvoDetectado = infoHistorica.nivelHistorico || extrairNivelEscolar(data.anoEscolar);
 
-  // 3. Restringe as abas da planilha estritamente à turma diagnóstica necessária:
+  // 3. Restringe as abas da planilha estritamente às turmas diagnósticas necessárias:
   // Se a planilha atual estiver sem abas ou não conectada, utiliza as abas da planilha do ano anterior!
   const isPrimeiroBimestre = (data.bimestre || "").includes("1");
 
+  // Mapeamento histórico de TODAS as turmas cadastradas na Identificação (ex: 6A, 6B, 6C)
+  const infosHistoricasTurmas = useMemo<InfoTurmaHistorica[]>(() => {
+    const base = turmasIdentificadas.length > 0 ? turmasIdentificadas : primeiraTurma ? [primeiraTurma] : [];
+    return base.map((t) => obterTurmaHistoricaAlvo(t, data.bimestre));
+  }, [turmasIdentificadas, primeiraTurma, data.bimestre]);
+
+  // Descobre a turma atual (Identificação) correspondente a uma aba da planilha
+  const obterTurmaAtualDaAba = (aba: string): string => {
+    const sala = formatarNomeSala(aba);
+    const info =
+      infosHistoricasTurmas.find((i) => i.turmaAtual === sala) ||
+      infosHistoricasTurmas.find((i) => i.turmaHistorica === sala);
+    return info ? info.turmaAtual : primeiraTurma;
+  };
+
   const abasDisponiveis = useMemo(() => {
+    if (infosHistoricasTurmas.length > 1) {
+      // Múltiplas turmas: une as abas correspondentes a cada turma cadastrada
+      const abasOrigemMulti = isPrimeiroBimestre
+        ? modoExibicaoDescritores === "comparacao"
+          ? todasAbas.length > 0 ? todasAbas : todasAbasAnterior
+          : todasAbasAnterior.length > 0 ? todasAbasAnterior : todasAbas
+        : todasAbas.length > 0 ? todasAbas : todasAbasAnterior;
+
+      if (abasOrigemMulti.length === 0) return [];
+
+      const resultado = new Set<string>();
+      infosHistoricasTurmas.forEach((info) => {
+        let alvos: string[];
+        if (!isPrimeiroBimestre) {
+          alvos = [info.turmaHistorica];
+        } else if (modoExibicaoDescritores === "anterior") {
+          alvos = [info.turmaAtual];
+        } else if (modoExibicaoDescritores === "atual") {
+          alvos = [info.turmaHistorica];
+          // 6º ano no 1º bimestre: se não houver aba do 5º ano, consulta a própria turma do 6º ano
+          if (info.isFundamental1) alvos.push(info.turmaAtual);
+        } else {
+          alvos = [info.turmaAtual, info.turmaHistorica];
+        }
+
+        for (const alvo of alvos) {
+          const encontradas = abasOrigemMulti.filter((aba) => formatarNomeSala(aba) === alvo);
+          if (encontradas.length > 0) {
+            encontradas.forEach((a) => resultado.add(a));
+            break;
+          }
+        }
+      });
+
+      if (resultado.size > 0) {
+        // Mantém a ordem original das abas na planilha
+        return abasOrigemMulti.filter((a) => resultado.has(a));
+      }
+    }
+
     // No 1º bimestre:
     // - Modo "atual": a turma analisada é a coorte dos alunos no ano anterior (ex: se 7A, analisa 6A)
     //   Buscamos preferencialmente na planilha anterior (ou atual se conectada).
@@ -249,6 +304,7 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
     todasAbasAnterior,
     infoHistorica.turmaHistorica,
     infoHistorica.isFundamental1,
+    infosHistoricasTurmas,
     nivelAlvoDetectado,
     isPrimeiroBimestre,
     modoExibicaoDescritores,
@@ -270,6 +326,18 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
   useEffect(() => {
     const algumaPlanilhaConectada = planilhaConectada || planilhaAnteriorConectada;
     if (algumaPlanilhaConectada && abasDisponiveis.length > 0) {
+      // Preserva a turma escolhida manualmente no seletor (ex: 6B) se ela continuar disponível,
+      // ajustando apenas para a aba do bimestre correspondente dessa mesma turma
+      if (abaSelecionada && abasDisponiveis.includes(abaSelecionada)) {
+        const sufixo = obterSufixoBimestreRecuperacao(data.bimestre);
+        const salaSel = formatarNomeSala(abaSelecionada);
+        const abaMesmaSala = abasDisponiveis.find(
+          (a) => formatarNomeSala(a) === salaSel && a.toUpperCase().includes(sufixo)
+        );
+        if (abaMesmaSala && abaMesmaSala !== abaSelecionada) setAbaSelecionada(abaMesmaSala);
+        return;
+      }
+
       const sufixoBim = obterSufixoBimestreRecuperacao(data.bimestre);
       const turmaAlvo = isPrimeiroBimestre
         ? (modoExibicaoDescritores === "anterior" ? primeiraTurma : infoHistorica.turmaHistorica)
@@ -390,8 +458,9 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
     // No 1º bimestre:
     // O modo "Anterior" deve analisar a mesma turma escolar do ano anterior (ex: se selecionou 6A correspondente ao 7A, busca o 7A do ano anterior; ou se a aba já for 7A, busca 7A)
     // Para identificar qual é a turma escolar de referência: primeiraTurma (ex: "7A") ou o nível atual
-    const turmaAnoAnteriorAlvo = isPrimeiroBimestre && primeiraTurma
-      ? primeiraTurma
+    const turmaAtualDaAba = obterTurmaAtualDaAba(abaSelecionada);
+    const turmaAnoAnteriorAlvo = isPrimeiroBimestre && turmaAtualDaAba
+      ? turmaAtualDaAba
       : formatarNomeSala(abaSelecionada);
 
     const matchBim = abaSelecionada.match(/[-–]\s*([1-4])\s*[Bb]/i);
@@ -428,6 +497,7 @@ export const DiagnosticModule: React.FC<DiagnosticModuleProps> = ({
   }, [
     abaSelecionada,
     primeiraTurma,
+    infosHistoricasTurmas,
     planilhaAnteriorConectada,
     urlPlanilhaAnterior,
     todasAbasAnterior,
