@@ -67,6 +67,21 @@ export const SocioemotionalModule: React.FC<SocioemotionalModuleProps> = ({
     }
   }, []);
 
+  // Sincroniza os checkboxes dos 5 grandes blocos com o texto atual (ex: gerado pela Sugestão de Guia)
+  useEffect(() => {
+    const textoAtual = data.competenciasSocioemocionais || "";
+    const novos = new Set<string>();
+    CINCO_GRANDES_BLOCOS_SOCIOEMOCIONAIS.forEach((bloco) => {
+      if (
+        textoAtual.includes(`[${bloco.nome}]`) ||
+        textoAtual.toLowerCase().includes(bloco.nome.toLowerCase())
+      ) {
+        novos.add(bloco.id);
+      }
+    });
+    setBlocosSelecionados(novos);
+  }, [data.competenciasSocioemocionais]);
+
   // Formata os blocos selecionados sem repetir o nome do bloco:
   // Exemplo: • [Autogestão]: Foco, Organização, Determinação, Persistência e Responsabilidade.
   const formatarParaTexto = (selecionados: Set<string>): string => {

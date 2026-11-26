@@ -17,6 +17,9 @@ import {
   Settings2,
   X,
   Filter,
+  WandSparkles,
+  CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import {
   LessonPlanState,
@@ -46,15 +49,27 @@ import {
   normalizarTexto,
 } from "../../services/googleSheetsService";
 import { urlParaBase64 } from "../../utils/imageHelper";
+import { GuideSuggestionModal } from "../common/GuideSuggestionModal";
+import {
+  gerarSugestaoGuiaCompleto,
+  OPCOES_SUGESTAO_PADRAO,
+  ResumoSecaoGerada,
+} from "../../services/guideSuggestionService";
 
 interface IdentificationModuleProps {
   data: LessonPlanState;
   onChange: (field: keyof LessonPlanState, value: any) => void;
+  onBatchChange?: (fields: Partial<LessonPlanState>) => void;
+  onNavigateTab?: (tabId: string) => void;
+  onOpenPreview?: () => void;
 }
 
 export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
   data,
   onChange,
+  onBatchChange,
+  onNavigateTab,
+  onOpenPreview,
 }) => {
   const config = SPREADSHEETS_CONFIG.identificacao;
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -74,6 +89,33 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
   // Estado para modal dos 4 bimestres e filtro de exibição de eventos
   const [modalBimestresAberto, setModalBimestresAberto] = useState<boolean>(false);
   const [verTodosEventosAno, setVerTodosEventosAno] = useState<boolean>(false);
+  const [modalSugestaoGuiaAberto, setModalSugestaoGuiaAberto] = useState<boolean>(false);
+  const [gerandoGuiaRapido, setGerandoGuiaRapido] = useState<boolean>(false);
+  const [relatorioGuiaRapido, setRelatorioGuiaRapido] = useState<ResumoSecaoGerada[] | null>(null);
+
+  const handlePreencherGuiaDireto = async () => {
+    try {
+      setGerandoGuiaRapido(true);
+      const resultado = await gerarSugestaoGuiaCompleto(data, {
+        ...OPCOES_SUGESTAO_PADRAO,
+        modoPreenchimento: "substituir_tudo",
+      });
+      if (onBatchChange) {
+        onBatchChange(resultado.camposAtualizados);
+      } else {
+        Object.entries(resultado.camposAtualizados).forEach(([k, v]) => {
+          onChange(k as keyof LessonPlanState, v);
+        });
+      }
+      setRelatorioGuiaRapido(resultado.relatorio);
+      setModalSugestaoGuiaAberto(true);
+    } catch (err) {
+      console.error("Erro ao preencher guia automaticamente:", err);
+      alert("Erro ao gerar sugestão do guia. Tente novamente.");
+    } finally {
+      setGerandoGuiaRapido(false);
+    }
+  };
 
   // Calendário efetivo dos 4 bimestres (persistido em data.calendarioBimestres)
   const calendarioEfetivo = useMemo<CalendarioBimestres>(() => {
@@ -1387,6 +1429,60 @@ export const IdentificationModule: React.FC<IdentificationModuleProps> = ({
 
 
 
+      {/* PREENCHIMENTO AUTOMÁTICO DO GUIA COMPLETO (DISCRETO E ALINHADO AO SISTEMA) */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="p-2 bg-sky-50 text-sky-600 rounded-lg border border-sky-100 shrink-0">
+            <WandSparkles className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-xs font-bold text-slate-700 uppercase">
+              Sugestão de Guia Completo
+            </h3>
+            <p className="text-xs text-slate-500 leading-snug">
+              Preenche automaticamente as demais seções do guia com base nos dados informados acima.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handlePreencherGuiaDireto}
+          disabled={gerandoGuiaRapido}
+          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-sky-600 hover:bg-sky-700 disabled:bg-slate-400 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
+        >
+          {gerandoGuiaRapido ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Preenchendo...</span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Sugerir e Preencher Guia</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Modal de Resumo Pós-Preenchimento do Guia Completo */}
+      <GuideSuggestionModal
+        isOpen={modalSugestaoGuiaAberto}
+        onClose={() => setModalSugestaoGuiaAberto(false)}
+        data={data}
+        initialReport={relatorioGuiaRapido}
+        onApplyBatch={(campos) => {
+          if (onBatchChange) {
+            onBatchChange(campos);
+          } else {
+            Object.entries(campos).forEach(([k, v]) => {
+              onChange(k as keyof LessonPlanState, v);
+            });
+          }
+        }}
+        onNavigateTab={onNavigateTab}
+        onOpenPreview={onOpenPreview}
+      />
     </div>
   );
 };

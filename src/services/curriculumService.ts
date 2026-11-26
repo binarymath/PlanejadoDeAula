@@ -179,6 +179,52 @@ export async function obterAulasCurriculo(
 }
 
 /**
+ * Formata uma string de Aprendizagem Essencial para o padrão com colchetes,
+ * suportando AEs simples e compostas (ex: "[AE1]: ..." ou "[AE1/AE2]: ...").
+ */
+export function formatarLinhaAprendizagemEssencial(aeBruta: string): string {
+  const texto = aeBruta.trim();
+  if (!texto) return "";
+
+  // Caso contenha múltiplas AEs separadas por " / " (ex: "AE1 - Desc 1 / AE2 - Desc 2")
+  if (/\bAE\s*\d+/i.test(texto) && texto.includes("/")) {
+    const partes = texto
+      .split(/\s*\/\s*(?=AE\s*\d+)/i)
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    if (partes.length > 1) {
+      const codigos: string[] = [];
+      const descricoes: string[] = [];
+
+      partes.forEach((p) => {
+        const m = p.match(/^(AE\s*\d+)\s*[-–:]\s*(.*)$/i);
+        if (m) {
+          const cod = m[1].replace(/\s+/g, "").toUpperCase();
+          if (!codigos.includes(cod)) codigos.push(cod);
+          if (m[2].trim()) descricoes.push(m[2].trim());
+        } else {
+          descricoes.push(p);
+        }
+      });
+
+      if (codigos.length > 0) {
+        return `• [${codigos.join("/")}]: ${descricoes.join(" / ")}`;
+      }
+    }
+  }
+
+  // Caso já venha como "AE1/AE2 - Descrição" ou "AE1 - Descrição"
+  const matchAE = texto.match(/^(AE\s*\d+(?:\s*\/\s*AE\s*\d+)*)\s*[-–:]\s*(.*)$/i);
+  if (matchAE) {
+    const tagLimpa = matchAE[1].replace(/\s+/g, "").toUpperCase();
+    return `• [${tagLimpa}]: ${matchAE[2].trim()}`;
+  }
+
+  return `• [AE]: ${texto}`;
+}
+
+/**
  * Agrupa as aulas por Aprendizagem Essencial (AE)
  */
 export function agruparPorAprendizagemEssencial(

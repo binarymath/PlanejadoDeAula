@@ -141,16 +141,74 @@ export const ScheduleModule: React.FC<ScheduleModuleProps> = ({
       .join("\n");
   };
 
+  const extrairAtividadesPorRotulo = (textoCronograma: string): Map<string, string> => {
+    const mapa = new Map<string, string>();
+    if (!textoCronograma || !textoCronograma.trim()) return mapa;
+
+    const linhas = textoCronograma.split("\n");
+    let rotuloAtual = "";
+
+    linhas.forEach((linhaBruta) => {
+      const linha = linhaBruta.trim();
+      if (!linha) return;
+      // Ignora cabeçalhos de mês (ex: "FEVEREIRO:")
+      if (/^[A-ZÇÃÕÁÉÍÓÚ]+\s*:$/i.test(linha)) return;
+
+      const matchSemana = linha.match(/^(\d{2}\/\d{2}\s+a\s+\d{2}\/\d{2})\s*:\s*(.*)$/);
+      if (matchSemana) {
+        rotuloAtual = matchSemana[1].trim();
+        const resto = matchSemana[2].trim();
+        if (resto) {
+          mapa.set(rotuloAtual, resto);
+        } else if (!mapa.has(rotuloAtual)) {
+          mapa.set(rotuloAtual, "");
+        }
+      } else if (rotuloAtual) {
+        const anterior = mapa.get(rotuloAtual) || "";
+        mapa.set(rotuloAtual, anterior ? `${anterior}\n${linha}` : linha);
+      }
+    });
+
+    return mapa;
+  };
+
   useEffect(() => {
-    if (rascunhoSemanas.length > 0 || semanasEstruturadas.length === 0) return;
-    setRascunhoSemanas(semanasEstruturadas.map((semana) => ({
-      ...semana,
-      atividades: semana.feriadosNaSemana.join("\n"),
-      itemSelecionado: "",
-      atividadeManual: "",
-    })));
-    setMensagemRascunho("Semanas prontas. Arraste os cartões ou adicione atividades manualmente.");
-  }, [semanasEstruturadas, rascunhoSemanas.length]);
+    if (semanasEstruturadas.length === 0) return;
+
+    const mapaDoTexto = extrairAtividadesPorRotulo(data.cronograma);
+    const temAtividadesNoTexto = Array.from(mapaDoTexto.values()).some((v) => v.trim().length > 0);
+
+    setRascunhoSemanas(
+      semanasEstruturadas.map((semana) => {
+        const doTexto = mapaDoTexto.get(semana.rotulo);
+        return {
+          ...semana,
+          atividades:
+            doTexto !== undefined && temAtividadesNoTexto
+              ? doTexto
+              : semana.feriadosNaSemana.join("\n"),
+          itemSelecionado: "",
+          atividadeManual: "",
+        };
+      })
+    );
+    setMensagemRascunho(
+      temAtividadesNoTexto
+        ? "Semanas carregadas com todas as aulas do cronograma. Arraste ou edite os cartões para ajustar."
+        : "Semanas prontas. Arraste os cartões ou adicione atividades manualmente."
+    );
+  }, [
+    data.dataInicioBimestre,
+    data.dataFimBimestre,
+    data.cronograma,
+    semanasEstruturadas.length,
+  ]);
+
+  const formatarCartaoAula = (aula: AulaCurriculoItem): string => {
+    const texto = obterTextoAula(aula).trim();
+    if (!texto) return "";
+    return /^Aula\s+\d+\s*:/i.test(texto) ? texto : `Aula ${aula.aula}: ${texto}`;
+  };
 
   const distribuirConteudos = () => {
     if (semanasEstruturadas.length === 0) {
@@ -159,7 +217,7 @@ export const ScheduleModule: React.FC<ScheduleModuleProps> = ({
     }
 
     const itens = aulasCurriculo
-      .map((aula) => obterTextoAula(aula).trim())
+      .map((aula) => formatarCartaoAula(aula))
       .filter(Boolean);
     if (itens.length === 0) {
       setMensagemRascunho("Não há itens preenchidos nessa coluna. Adicione atividades manualmente nas semanas abertas.");
@@ -191,7 +249,7 @@ export const ScheduleModule: React.FC<ScheduleModuleProps> = ({
       itemSelecionado: "",
       atividadeManual: "",
     })));
-    setMensagemRascunho(`${itens.length} itens distribuídos em ${semanasEstruturadas.length} semanas. Revise e edite antes de aplicar.`);
+    setMensagemRascunho(`${itens.length} aulas distribuídas em ${semanasEstruturadas.length} semanas. Revise e edite antes de aplicar.`);
   };
 
   const atualizarItemSelecionado = (indice: number, itemSelecionado: string) => {
@@ -250,7 +308,7 @@ export const ScheduleModule: React.FC<ScheduleModuleProps> = ({
     const semana = rascunhoSemanas[indice];
     if (!semana || semana.itemSelecionado === "") return;
     const aula = aulasCurriculo[Number(semana.itemSelecionado)];
-    const item = aula ? obterTextoAula(aula).trim() : "";
+    const item = aula ? formatarCartaoAula(aula) : "";
     if (!item) return;
 
     if (textoContemItem(semana.atividades, item)) {

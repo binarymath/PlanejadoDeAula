@@ -63,6 +63,9 @@ export async function generateAndDownloadDocx(data: LessonPlanState, customFileN
       bimestreFormatado += ` (Período: ${formatBR(data.dataInicioBimestre)} até ${formatBR(data.dataFimBimestre)})`;
     }
 
+    const limparColchetes = (texto?: string) =>
+      texto && texto.trim() ? texto.replace(/\[|\]/g, "") : "Não informado.";
+
     // 4. Formata os dados para o template
     const renderData = {
       // Título do cabeçalho oficial de largura total
@@ -80,13 +83,13 @@ export async function generateAndDownloadDocx(data: LessonPlanState, customFileN
       aulasPrevistas: data.aulasPrevistas || "____",
       controleFrequencia: data.controleFrequencia || "Acompanhamento diário no Diário Digital (SED)",
 
-      aprendizagensNaoConsolidadas: data.aprendizagensNaoConsolidadas || "Não informado.",
-      objetosConhecimento: data.objetosConhecimento || "Não informado.",
-      competenciasSocioemocionais: data.competenciasSocioemocionais || "Não informado.",
-      cronograma: data.cronograma || "Não informado.",
-      metodologiaAtiva: data.metodologiaAtiva || "Não informado.",
-      criterioAvaliacao: data.criterioAvaliacao || "Não informado.",
-      referenciasApoio: data.referenciasApoio || "Não informado.",
+      aprendizagensNaoConsolidadas: limparColchetes(data.aprendizagensNaoConsolidadas),
+      objetosConhecimento: limparColchetes(data.objetosConhecimento),
+      competenciasSocioemocionais: limparColchetes(data.competenciasSocioemocionais),
+      cronograma: limparColchetes(data.cronograma),
+      metodologiaAtiva: limparColchetes(data.metodologiaAtiva),
+      criterioAvaliacao: limparColchetes(data.criterioAvaliacao),
+      referenciasApoio: limparColchetes(data.referenciasApoio),
     };
 
     // 5. Executa a substituição dos dados

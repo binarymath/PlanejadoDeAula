@@ -19,6 +19,7 @@ import {
   GrupoAprendizagemEssencial,
   obterAulasCurriculo,
   agruparPorAprendizagemEssencial,
+  formatarLinhaAprendizagemEssencial,
 } from "../../services/curriculumService";
 
 const STORAGE_CURRICULO_URL_KEY = "planejador_url_planilha_curriculo";
@@ -140,15 +141,20 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
     const textoAtual = data.objetosConhecimento || "";
     const novosIds = new Set<string>();
     gruposAE.forEach((g) => {
-      // Verifica se a string bruta da AE está presente
-      if (textoAtual.includes(g.aprendizagemEssencial)) {
+      // Verifica se a string bruta ou a linha formatada ([AE1]: ou [AE1/AE2]:) está presente
+      const linhaFormatada = formatarLinhaAprendizagemEssencial(g.aprendizagemEssencial);
+      const semBullet = linhaFormatada.replace(/^•\s*/, "").trim();
+      if (
+        textoAtual.includes(g.aprendizagemEssencial) ||
+        (semBullet && textoAtual.includes(semBullet))
+      ) {
         novosIds.add(g.id);
         return;
       }
       // Verifica se o formato gerado [AE...]: título está presente
       const matchAE = g.aprendizagemEssencial.match(/^(AE\s*\d+)\s*[-–:]\s*(.*)$/i);
       if (matchAE) {
-        const tag = `[${matchAE[1].toUpperCase()}]:`;
+        const tag = `[${matchAE[1].replace(/\s+/g, "").toUpperCase()}]:`;
         const titulo = matchAE[2].trim();
         if (textoAtual.includes(tag) && (titulo === "" || textoAtual.includes(titulo))) {
           novosIds.add(g.id);
@@ -164,19 +170,13 @@ export const ThematicUnitModule: React.FC<ThematicUnitModuleProps> = ({
     setSelecionadasAE(novosIds);
   }, [gruposAE, data.objetosConhecimento]);
 
-  // Formata o conjunto de AEs selecionadas para o padrão exato solicitado: [AE1]: (Título)
+  // Formata o conjunto de AEs selecionadas para o padrão exato solicitado: [AE1]: (Título) ou [AE1/AE2]: (Título)
   const formatarGruposParaTexto = (selecionados: Set<string>): string => {
     const linhas: string[] = [];
 
     gruposAE.forEach((g) => {
       if (selecionados.has(g.id)) {
-        // Extrai código e título (ex: "AE1 - Compor e decompor..." -> "[AE1]: Compor e decompor...")
-        const matchAE = g.aprendizagemEssencial.match(/^(AE\s*\d+)\s*[-–:]\s*(.*)$/i);
-        if (matchAE) {
-          linhas.push(`• [${matchAE[1].toUpperCase()}]: ${matchAE[2].trim()}`);
-        } else {
-          linhas.push(`• [AE]: ${g.aprendizagemEssencial.trim()}`);
-        }
+        linhas.push(formatarLinhaAprendizagemEssencial(g.aprendizagemEssencial));
       }
     });
 

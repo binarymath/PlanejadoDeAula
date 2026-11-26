@@ -103,6 +103,13 @@ export const App: React.FC = () => {
     }));
   };
 
+  const handleBatchFieldChange = (fields: Partial<LessonPlanState>) => {
+    setData((prev) => ({
+      ...prev,
+      ...fields,
+    }));
+  };
+
   const bimesterTitles = getBimesterTitles(data.bimestre);
 
   const tabs: TabDefinition[] = [
@@ -370,7 +377,13 @@ export const App: React.FC = () => {
           {/* Renderização do Módulo Ativo */}
           <div>
             {activeTab === "identificacao" && (
-              <IdentificationModule data={data} onChange={handleFieldChange} />
+              <IdentificationModule
+                data={data}
+                onChange={handleFieldChange}
+                onBatchChange={handleBatchFieldChange}
+                onNavigateTab={(tabId) => setActiveTab(tabId)}
+                onOpenPreview={() => setShowPreviewModal(true)}
+              />
             )}
             {activeTab === "diagnostico" && (
               <DiagnosticModule data={data} onChange={handleFieldChange} />

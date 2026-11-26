@@ -11,6 +11,11 @@ function formatDateBR(dateStr?: string): string {
   return `${day}/${month}/${year}`;
 }
 
+function removerColchetes(texto: string): string {
+  if (!texto) return "";
+  return texto.replace(/\[|\]/g, "");
+}
+
 interface DocumentPreviewModalProps {
   data: LessonPlanState;
   isOpen: boolean;
@@ -175,15 +180,15 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                       // Caso 1: Linha agrupada [6º A: 10,00% | 6º C: 8,70%]: Descrição ou [6º A - 10,00%]: Descrição
                       const matchAgrupado = trimmed.match(/^•?\s*\[(.*?)\]:\s*(.*)$/);
                       if (matchAgrupado) {
-                        const blocoSalas = matchAgrupado[1].trim();
-                        const desc = matchAgrupado[2].trim();
+                        const blocoSalas = removerColchetes(matchAgrupado[1].trim());
+                        const desc = removerColchetes(matchAgrupado[2].trim());
                         return (
                           <div
                             key={idx}
                             className="flex items-start gap-1.5 text-xs text-slate-900 leading-snug py-0.5"
                           >
                             <span className="text-slate-400 select-none">•</span>
-                            <span className="font-bold text-slate-800">[{blocoSalas}]:</span>
+                            <span className="font-bold text-slate-800">{blocoSalas}:</span>
                             <span className="flex-1 text-slate-800">{desc}</span>
                           </div>
                         );
@@ -200,9 +205,9 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                             className="flex items-start gap-1.5 text-xs text-slate-900 leading-snug py-0.5"
                           >
                             <span className="text-slate-400 select-none">•</span>
-                            <span className="font-bold text-slate-800">[{sala.trim()} - {taxaFmt}]:</span>
+                            <span className="font-bold text-slate-800">{removerColchetes(sala.trim())} - {taxaFmt}:</span>
                             <span className="flex-1 text-slate-800">
-                              {desc.trim()}
+                              {removerColchetes(desc.trim())}
                             </span>
                           </div>
                         );
@@ -212,15 +217,15 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                       const parts = trimmed.split("|").map((p) => p.trim());
                       if (parts.length >= 4 && parts[1].includes("ANO")) {
                         const taxaFmt = formatarPorcentagem2Casas(parts[2]);
-                        const desc = parts[3];
-                        const comp = parts[4] || "";
+                        const desc = removerColchetes(parts[3]);
+                        const comp = removerColchetes(parts[4] || "");
                         return (
                           <div
                             key={idx}
                             className="flex items-start gap-1.5 text-xs text-slate-900 leading-snug py-0.5"
                           >
                             <span className="text-slate-400 select-none">•</span>
-                            <span className="font-bold text-slate-800">[{parts[1]} - {taxaFmt}]:</span>
+                            <span className="font-bold text-slate-800">{removerColchetes(parts[1])} - {taxaFmt}:</span>
                             <span className="flex-1 text-slate-800">
                               {desc}
                               {comp && <span className="text-slate-500 text-[11px] ml-1">({comp})</span>}
@@ -229,9 +234,10 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                         );
                       }
 
+                      const textoLimpo = removerColchetes(trimmed);
                       return (
                         <p key={idx} className="text-xs text-slate-800 leading-relaxed py-0.5">
-                          {trimmed.startsWith("•") ? trimmed : `• ${trimmed}`}
+                          {textoLimpo.startsWith("•") ? textoLimpo : `• ${textoLimpo}`}
                         </p>
                       );
                     })
@@ -252,7 +258,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                       const trimmed = line.trim();
                       if (!trimmed) return <div key={idx} className="h-1.5" />;
 
-                      const matchAEHeader = trimmed.match(/^•?\s*\[?(AE\s*\d+)\]?\s*[-–:]\s*(.*)$/i);
+                      const matchAEHeader = trimmed.match(/^•?\s*\[?(AE\s*\d+(?:\s*\/\s*AE\s*\d+)*)\]?\s*[-–:]\s*(.*)$/i);
                       if (matchAEHeader) {
                         return (
                           <div
@@ -260,8 +266,8 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                             className="flex items-start gap-1.5 text-xs text-slate-900 leading-snug pt-1"
                           >
                             <span className="text-slate-400 select-none">•</span>
-                            <span className="font-bold text-slate-900">[{matchAEHeader[1].toUpperCase()}]:</span>
-                            <span className="flex-1 text-slate-800 font-normal">{matchAEHeader[2].trim()}</span>
+                            <span className="font-bold text-slate-900">{removerColchetes(matchAEHeader[1].toUpperCase())}:</span>
+                            <span className="flex-1 text-slate-800 font-normal">{removerColchetes(matchAEHeader[2].trim())}</span>
                           </div>
                         );
                       }
@@ -272,14 +278,14 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                             key={idx}
                             className="pl-4 text-xs text-slate-700 leading-relaxed"
                           >
-                            {trimmed}
+                            {removerColchetes(trimmed)}
                           </div>
                         );
                       }
 
                       return (
                         <p key={idx} className="text-xs text-slate-800 leading-relaxed">
-                          {trimmed}
+                          {removerColchetes(trimmed)}
                         </p>
                       );
                     })
@@ -308,15 +314,16 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                             className="flex items-start gap-1.5 text-xs text-slate-900 leading-snug py-0.5"
                           >
                             <span className="text-slate-400 select-none">•</span>
-                            <span className="font-bold text-slate-900">[{matchBloco[1].trim()}]:</span>
-                            <span className="flex-1 text-slate-800 font-normal">{matchBloco[2].trim()}</span>
+                            <span className="font-bold text-slate-900">{removerColchetes(matchBloco[1].trim())}:</span>
+                            <span className="flex-1 text-slate-800 font-normal">{removerColchetes(matchBloco[2].trim())}</span>
                           </div>
                         );
                       }
 
+                      const textoLimpo = removerColchetes(trimmed);
                       return (
                         <p key={idx} className="text-xs text-slate-800 leading-relaxed py-0.5">
-                          {trimmed.startsWith("•") ? trimmed : `• ${trimmed}`}
+                          {textoLimpo.startsWith("•") ? textoLimpo : `• ${textoLimpo}`}
                         </p>
                       );
                     })
@@ -356,7 +363,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                               key={idx}
                               className="font-bold text-slate-900 text-xs tracking-wider pt-2 pb-1 border-b border-slate-200"
                             >
-                              {trimmed}
+                              {removerColchetes(trimmed)}
                             </div>
                           );
                         }
@@ -372,7 +379,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                                 {matchSemana[1]}:
                               </span>
                               <span className="flex-1 text-slate-800 font-normal">
-                                {matchSemana[2].trim()}
+                                {removerColchetes(matchSemana[2].trim())}
                               </span>
                             </div>
                           );
@@ -380,7 +387,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
 
                         return (
                           <p key={idx} className="text-xs text-slate-800 leading-relaxed py-0.5">
-                            {trimmed}
+                            {removerColchetes(trimmed)}
                           </p>
                         );
                       });
@@ -410,15 +417,16 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                             className="flex items-start gap-1.5 text-xs text-slate-900 leading-snug py-0.5"
                           >
                             <span className="text-slate-400 select-none">•</span>
-                            <span className="font-bold text-slate-900">[{matchMet[1].trim()}]:</span>
-                            <span className="flex-1 text-slate-800 font-normal">{matchMet[2].trim()}</span>
+                            <span className="font-bold text-slate-900">{removerColchetes(matchMet[1].trim())}:</span>
+                            <span className="flex-1 text-slate-800 font-normal">{removerColchetes(matchMet[2].trim())}</span>
                           </div>
                         );
                       }
 
+                      const textoLimpo = removerColchetes(trimmed);
                       return (
                         <p key={idx} className="text-xs text-slate-800 leading-relaxed py-0.5">
-                          {trimmed.startsWith("•") ? trimmed : `• ${trimmed}`}
+                          {textoLimpo.startsWith("•") ? textoLimpo : `• ${textoLimpo}`}
                         </p>
                       );
                     })
@@ -448,16 +456,17 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                           >
                             <span className="text-slate-400 select-none">•</span>
                             <span className="font-bold text-slate-900">
-                              [{matchCrit[1].trim()}]{matchCrit[2] ? ` (${matchCrit[2].trim()}):` : ":"}
+                              {removerColchetes(matchCrit[1].trim())}{matchCrit[2] ? ` (${removerColchetes(matchCrit[2].trim())}):` : ":"}
                             </span>
-                            <span className="flex-1 text-slate-800 font-normal">{matchCrit[3].trim()}</span>
+                            <span className="flex-1 text-slate-800 font-normal">{removerColchetes(matchCrit[3].trim())}</span>
                           </div>
                         );
                       }
 
+                      const textoLimpo = removerColchetes(trimmed);
                       return (
                         <p key={idx} className="text-xs text-slate-800 leading-relaxed py-0.5">
-                          {trimmed.startsWith("•") ? trimmed : `• ${trimmed}`}
+                          {textoLimpo.startsWith("•") ? textoLimpo : `• ${textoLimpo}`}
                         </p>
                       );
                     })
@@ -486,15 +495,16 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                             className="flex items-start gap-1.5 text-xs text-slate-900 leading-snug py-0.5"
                           >
                             <span className="text-slate-400 select-none">•</span>
-                            <span className="font-bold text-slate-900">[{matchRef[1].trim()}]:</span>
-                            <span className="flex-1 text-slate-800 font-normal">{matchRef[2].trim()}</span>
+                            <span className="font-bold text-slate-900">{removerColchetes(matchRef[1].trim())}:</span>
+                            <span className="flex-1 text-slate-800 font-normal">{removerColchetes(matchRef[2].trim())}</span>
                           </div>
                         );
                       }
 
+                      const textoLimpo = removerColchetes(trimmed);
                       return (
                         <p key={idx} className="text-xs text-slate-800 leading-relaxed py-0.5">
-                          {trimmed.startsWith("•") ? trimmed : `• ${trimmed}`}
+                          {textoLimpo.startsWith("•") ? textoLimpo : `• ${textoLimpo}`}
                         </p>
                       );
                     })
